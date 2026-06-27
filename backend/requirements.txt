@@ -8,3 +8,4 @@ alembic
 python-dotenv
 python-jose[cryptography]
 bcrypt
+google-genai

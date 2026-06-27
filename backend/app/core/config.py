@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     ENVIRONMENT: str = "development"
+    GEMINI_API_KEY: str
 
     @field_validator("DATABASE_URL")
     @classmethod
