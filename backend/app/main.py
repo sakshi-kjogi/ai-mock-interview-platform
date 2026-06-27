@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.api.v1 import auth
 
 app = FastAPI(title="AI Mock Interview Platform")
 
@@ -11,6 +12,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth.router, prefix="/api/v1")
 
 @app.get("/health")
 def health_check():

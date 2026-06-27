@@ -3,5 +3,8 @@ uvicorn[standard]
 sqlalchemy>=2.0
 psycopg2-binary
 pydantic-settings
+pydantic[email]
 alembic
 python-dotenv
+python-jose[cryptography]
+bcrypt
