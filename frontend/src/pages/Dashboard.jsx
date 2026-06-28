@@ -1,101 +1,254 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import {
+  BarChart, Bar, LineChart, Line,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+} from "recharts";
 import { useAuth } from "../context/AuthContext";
 import { listInterviews } from "../api/interviews";
+import { getDashboardAnalytics } from "../api/analytics";
 
+// ── constants ──────────────────────────────────────────────────────────────
 const TYPE_LABELS = {
   technical: "Technical",
   behavioral: "Behavioral",
   system_design: "System Design",
 };
-
-const STATUS_STYLES = {
-  in_progress: "bg-yellow-500/20 text-yellow-400",
-  completed: "bg-green-500/20 text-green-400",
-  abandoned: "bg-red-500/20 text-red-400",
+const STATUS_COLORS = {
+  in_progress: { bg: "rgba(234,179,8,0.15)", color: "#facc15" },
+  completed:   { bg: "rgba(34,197,94,0.15)",  color: "#4ade80" },
+  abandoned:   { bg: "rgba(239,68,68,0.15)",  color: "#f87171" },
 };
-
 const STATUS_LABELS = {
   in_progress: "In Progress",
-  completed: "Completed",
-  abandoned: "Abandoned",
+  completed:   "Completed",
+  abandoned:   "Abandoned",
 };
 
+const fmtTime = (s) => {
+  if (!s) return "—";
+  const m = Math.floor(s / 60);
+  return m > 0 ? `${m}m ${Math.round(s % 60)}s` : `${Math.round(s)}s`;
+};
+
+// ── sub-components ─────────────────────────────────────────────────────────
+function StatCard({ label, value, sub }) {
+  return (
+    <div style={{
+      background: "#1f2937", border: "1px solid #374151",
+      borderRadius: 12, padding: 20, flex: 1,
+    }}>
+      <p style={{ color: "#9ca3af", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>
+        {label}
+      </p>
+      <p style={{ color: "#fff", fontSize: 28, fontWeight: 700, margin: 0 }}>{value}</p>
+      {sub && <p style={{ color: "#6b7280", fontSize: 11, marginTop: 4 }}>{sub}</p>}
+    </div>
+  );
+}
+
+function ChartTooltip({ active, payload, label }) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div style={{
+      background: "#1f2937", border: "1px solid #374151",
+      borderRadius: 8, padding: "8px 12px", fontSize: 13,
+    }}>
+      <p style={{ color: "#9ca3af", fontSize: 11, marginBottom: 2 }}>{label}</p>
+      <p style={{ color: "#fff", fontWeight: 600 }}>{payload[0].value} pts</p>
+    </div>
+  );
+}
+
+// ── main ───────────────────────────────────────────────────────────────────
 export default function Dashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const [sessions, setSessions] = useState([]);
-  const [loading, setLoading] = useState(true);
+
+  const [sessions, setSessions]   = useState([]);
+  const [analytics, setAnalytics] = useState(null);
+  const [loading, setLoading]     = useState(true);
 
   useEffect(() => {
-    listInterviews()
-      .then(setSessions)
+    Promise.all([listInterviews(), getDashboardAnalytics()])
+      .then(([s, a]) => { setSessions(s); setAnalytics(a); })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
 
+  const trendData = analytics?.score_trend.map((s, i) => ({
+    name: `#${i + 1}`, score: s.avg_score, role: s.role_title,
+  })) ?? [];
+
+  const categoryData = analytics?.category_breakdown.map((c) => ({
+    name: c.category, score: c.avg_score, count: c.count,
+  })) ?? [];
+
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
-      {/* Header */}
-      <div className="border-b border-gray-800 px-8 py-4 flex items-center justify-between">
-        <h1 className="text-xl font-bold text-indigo-400">AI Mock Interview</h1>
-        <div className="flex items-center gap-4">
-          <span className="text-gray-400 text-sm">{user?.full_name}</span>
-          <button
-            onClick={logout}
-            className="px-3 py-1 text-sm bg-red-600 hover:bg-red-700 rounded-lg transition"
-          >
-            Log Out
-          </button>
+    <div style={{ minHeight: "100vh", background: "#111827", color: "#fff", fontFamily: "inherit" }}>
+
+      {/* ── Header ── */}
+      <div style={{
+        borderBottom: "1px solid #1f2937", padding: "16px 32px",
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+      }}>
+        <span style={{ fontSize: 20, fontWeight: 700, color: "#818cf8" }}>AI Mock Interview</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <span style={{ color: "#9ca3af", fontSize: 14 }}>{user?.full_name}</span>
+          <button onClick={logout} style={{
+            background: "#dc2626", border: "none", color: "#fff",
+            padding: "6px 14px", borderRadius: 8, fontSize: 13, cursor: "pointer",
+          }}>Log Out</button>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-8 py-10">
-        {/* Welcome + CTA */}
-        <div className="flex items-center justify-between mb-10">
+      {/* ── Body ── */}
+      <div style={{ maxWidth: 1024, margin: "0 auto", padding: "40px 32px" }}>
+
+        {/* Welcome row */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 32 }}>
           <div>
-            <h2 className="text-2xl font-bold">Welcome back, {user?.full_name} 👋</h2>
-            <p className="text-gray-400 mt-1 text-sm">Ready to practice?</p>
+            <h2 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>
+              Welcome back, {user?.full_name} 👋
+            </h2>
+            <p style={{ color: "#9ca3af", fontSize: 14, marginTop: 4 }}>Here's how you're progressing</p>
           </div>
-          <button
-            onClick={() => navigate("/interview/setup")}
-            className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg font-semibold transition"
-          >
-            + New Interview
-          </button>
+          <button onClick={() => navigate("/interview/setup")} style={{
+            background: "#4f46e5", border: "none", color: "#fff",
+            padding: "10px 20px", borderRadius: 8, fontWeight: 600,
+            fontSize: 14, cursor: "pointer",
+          }}>+ New Interview</button>
         </div>
 
-        {/* Sessions List */}
-        <h3 className="text-lg font-semibold mb-4 text-gray-300">Past Sessions</h3>
-
         {loading ? (
-          <p className="text-gray-500 text-sm">Loading sessions...</p>
-        ) : sessions.length === 0 ? (
-          <div className="border border-dashed border-gray-700 rounded-xl p-10 text-center text-gray-500">
-            <p className="text-lg mb-2">No interviews yet</p>
-            <p className="text-sm">Click "New Interview" to get started</p>
-          </div>
+          <p style={{ color: "#6b7280", fontSize: 14 }}>Loading analytics...</p>
         ) : (
-          <div className="space-y-3">
-            {sessions.map((s) => (
-              <div
-                key={s.id}
-                onClick={() => navigate(`/interview/${s.id}`)}
-                className="bg-gray-800 border border-gray-700 rounded-xl px-6 py-4 flex items-center justify-between cursor-pointer hover:border-indigo-500 transition"
-              >
-                <div>
-                  <p className="font-semibold">{s.role_title}</p>
-                  <p className="text-sm text-gray-400 mt-0.5">
-                    {TYPE_LABELS[s.interview_type]} •{" "}
-                    {new Date(s.created_at).toLocaleDateString()}
-                  </p>
-                </div>
-                <span className={`text-xs font-medium px-3 py-1 rounded-full ${STATUS_STYLES[s.status]}`}>
-                  {STATUS_LABELS[s.status]}
-                </span>
+          <>
+            {/* ── Stat Cards ── */}
+            <div style={{ display: "flex", gap: 16, marginBottom: 32 }}>
+              <StatCard
+                label="Total Interviews"
+                value={analytics?.total_sessions ?? 0}
+                sub={`${analytics?.completed_sessions ?? 0} completed`}
+              />
+              <StatCard
+                label="Avg Score"
+                value={analytics?.overall_avg_score ?? "—"}
+                sub="out of 100"
+              />
+              <StatCard
+                label="Completion Rate"
+                value={analytics?.total_sessions > 0 ? `${analytics.completion_rate}%` : "—"}
+                sub="sessions finished"
+              />
+              <StatCard
+                label="Avg Time / Answer"
+                value={fmtTime(analytics?.avg_time_per_answer_seconds)}
+                sub="per question"
+              />
+            </div>
+
+            {/* ── Charts ── */}
+            {trendData.length > 0 || categoryData.length > 0 ? (
+              <div style={{ display: "flex", gap: 24, marginBottom: 32 }}>
+
+                {trendData.length > 0 && (
+                  <div style={{
+                    flex: 1, background: "#1f2937", border: "1px solid #374151",
+                    borderRadius: 12, padding: 20,
+                  }}>
+                    <p style={{ fontWeight: 600, fontSize: 13, color: "#d1d5db", marginBottom: 16 }}>
+                      Score Trend
+                    </p>
+                    <ResponsiveContainer width="100%" height={200}>
+                      <LineChart data={trendData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                        <XAxis dataKey="name" tick={{ fill: "#9ca3af", fontSize: 11 }} />
+                        <YAxis domain={[0, 100]} tick={{ fill: "#9ca3af", fontSize: 11 }} />
+                        <Tooltip content={<ChartTooltip />} />
+                        <Line type="monotone" dataKey="score" stroke="#6366f1"
+                          strokeWidth={2} dot={{ fill: "#6366f1", r: 4 }} activeDot={{ r: 6 }} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+
+                {categoryData.length > 0 && (
+                  <div style={{
+                    flex: 1, background: "#1f2937", border: "1px solid #374151",
+                    borderRadius: 12, padding: 20,
+                  }}>
+                    <p style={{ fontWeight: 600, fontSize: 13, color: "#d1d5db", marginBottom: 16 }}>
+                      Category Breakdown
+                    </p>
+                    <ResponsiveContainer width="100%" height={200}>
+                      <BarChart data={categoryData} layout="vertical" margin={{ left: 16 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                        <XAxis type="number" domain={[0, 100]} tick={{ fill: "#9ca3af", fontSize: 11 }} />
+                        <YAxis type="category" dataKey="name" width={100} tick={{ fill: "#9ca3af", fontSize: 10 }} />
+                        <Tooltip content={<ChartTooltip />} />
+                        <Bar dataKey="score" radius={[0, 4, 4, 0]} fill="#6366f1" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
               </div>
-            ))}
-          </div>
+            ) : (
+              <div style={{
+                background: "#1f2937", border: "1px dashed #374151",
+                borderRadius: 12, padding: 32, textAlign: "center", marginBottom: 32,
+              }}>
+                <p style={{ color: "#6b7280", fontSize: 14 }}>
+                  Complete an interview with feedback to see your analytics charts
+                </p>
+              </div>
+            )}
+
+            {/* ── Past Sessions ── */}
+            <p style={{ fontWeight: 600, fontSize: 16, color: "#d1d5db", marginBottom: 16 }}>
+              Past Sessions
+            </p>
+
+            {sessions.length === 0 ? (
+              <div style={{
+                border: "1px dashed #374151", borderRadius: 12,
+                padding: 40, textAlign: "center", color: "#6b7280",
+              }}>
+                <p style={{ fontSize: 18, marginBottom: 8 }}>No interviews yet</p>
+                <p style={{ fontSize: 13 }}>Click "+ New Interview" to get started</p>
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {sessions.map((s) => (
+                  <div key={s.id} onClick={() => navigate(`/interview/${s.id}`)}
+                    style={{
+                      background: "#1f2937", border: "1px solid #374151",
+                      borderRadius: 12, padding: "16px 24px", cursor: "pointer",
+                      display: "flex", alignItems: "center", justifyContent: "space-between",
+                      transition: "border-color 0.2s",
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.borderColor = "#6366f1"}
+                    onMouseLeave={e => e.currentTarget.style.borderColor = "#374151"}
+                  >
+                    <div>
+                      <p style={{ fontWeight: 600, fontSize: 15, margin: 0 }}>{s.role_title}</p>
+                      <p style={{ color: "#9ca3af", fontSize: 13, marginTop: 2 }}>
+                        {TYPE_LABELS[s.interview_type]} · {new Date(s.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <span style={{
+                      background: STATUS_COLORS[s.status]?.bg,
+                      color: STATUS_COLORS[s.status]?.color,
+                      fontSize: 12, fontWeight: 500,
+                      padding: "4px 12px", borderRadius: 999,
+                    }}>
+                      {STATUS_LABELS[s.status]}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
