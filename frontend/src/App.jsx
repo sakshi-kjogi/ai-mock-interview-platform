@@ -6,6 +6,8 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import InterviewSetup from "./pages/InterviewSetup";
 import InterviewSession from "./pages/InterviewSession";
+import AnswerQuestion from "./pages/AnswerQuestion";
+import InterviewComplete from "./pages/InterviewComplete";
 
 export default function App() {
   return (
@@ -22,6 +24,12 @@ export default function App() {
           } />
           <Route path="/interview/:id" element={
             <ProtectedRoute><InterviewSession /></ProtectedRoute>
+          } />
+          <Route path="/interview/:sessionId/answer/:questionId" element={
+            <ProtectedRoute><AnswerQuestion /></ProtectedRoute>
+          } />
+          <Route path="/interview/:sessionId/complete" element={
+            <ProtectedRoute><InterviewComplete /></ProtectedRoute>
           } />
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>

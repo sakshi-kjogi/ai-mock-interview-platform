@@ -140,13 +140,25 @@ export default function InterviewSession() {
 
             {/* Day 5 placeholder */}
             <div className="text-center">
-              <button
-                disabled
-                className="px-8 py-3 bg-indigo-600 opacity-40 cursor-not-allowed rounded-lg font-semibold"
-              >
-                Begin Answering (Day 5)
-              </button>
-              <p className="text-gray-500 text-xs mt-2">Answer submission coming in Day 5</p>
+              {/* Replace the disabled button block with this */}
+<div className="text-center">
+  {questions.length > 0 ? (
+    <button
+      onClick={() => navigate(`/interview/${id}/answer/${questions[0].id}`)}
+      className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 rounded-lg font-semibold transition"
+    >
+      Begin Answering →
+    </button>
+  ) : (
+    <button
+      disabled
+      className="px-8 py-3 bg-indigo-600 opacity-40 cursor-not-allowed rounded-lg font-semibold"
+    >
+      Generate Questions First
+    </button>
+  )}
+</div>
+              
             </div>
           </>
         )}
