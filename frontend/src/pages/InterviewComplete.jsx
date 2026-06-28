@@ -106,15 +106,18 @@ export default function InterviewComplete() {
         </div>
 
         {/* Day 6 CTA */}
-        <div className="text-center">
-          <button
-            disabled
-            className="px-8 py-3 bg-indigo-600 opacity-40 cursor-not-allowed rounded-lg font-semibold"
-          >
-            Get AI Feedback (Day 6)
-          </button>
-          <p className="text-gray-500 text-xs mt-2">AI evaluation coming in Day 6</p>
-        </div>
+        {/* Replace the disabled button block with this */}
+<div className="text-center">
+  <button
+    onClick={() => navigate(`/interview/${sessionId}/feedback`)}
+    className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 rounded-lg font-semibold transition"
+  >
+    Get AI Feedback →
+  </button>
+  <p className="text-gray-500 text-xs mt-2">
+    Powered by Gemini AI
+  </p>
+</div>
       </div>
     </div>
   );

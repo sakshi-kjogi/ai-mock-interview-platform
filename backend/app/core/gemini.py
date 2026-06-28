@@ -82,3 +82,77 @@ def generate_interview_questions(
     # except (json.JSONDecodeError, KeyError) as e:
     #     raise ValueError(f"Gemini returned unparseable output: {e}\nRaw: {raw}")
     # ──────────────────────────────────────────────────────────────────────────
+
+
+def evaluate_answer(question_text: str, answer_text: str) -> dict:
+    # ── MOCK MODE ──────────────────────────────────────────────────────────────
+    # Replace this block with the real Gemini call once API quota is available.
+    word_count = len(answer_text.strip().split())
+
+    if word_count < 20:
+        score, strengths, improvements = (
+            35,
+            "Attempted to address the question.",
+            "Answer is too brief. Elaborate with specific examples and cover edge cases.",
+        )
+    elif word_count < 50:
+        score, strengths, improvements = (
+            58,
+            "Shows basic understanding. Covers the main point adequately.",
+            "Expand with concrete examples. Discuss trade-offs and real-world applications.",
+        )
+    elif word_count < 100:
+        score, strengths, improvements = (
+            74,
+            "Good understanding demonstrated. Clear explanation with reasonable depth.",
+            "Consider discussing edge cases. A concrete example would strengthen this further.",
+        )
+    else:
+        score, strengths, improvements = (
+            88,
+            "Comprehensive answer showing strong understanding. Well-structured with good depth.",
+            "Minor refinements: ensure conciseness and that key points are clearly highlighted.",
+        )
+
+    return {
+        "score": score,
+        "strengths": strengths,
+        "improvements": improvements,
+        "raw": {"word_count": word_count, "mock": True},
+    }
+    # ──────────────────────────────────────────────────────────────────────────
+
+    # ── REAL GEMINI CALL (uncomment when quota is available) ──────────────────
+    # prompt = f"""You are an expert interviewer evaluating a candidate's response.
+    #
+    # Question: {question_text}
+    # Candidate's Answer: {answer_text}
+    #
+    # Evaluate the answer and return ONLY a valid JSON object, no markdown:
+    # {{
+    #   "score": 75,
+    #   "strengths": "what the candidate did well",
+    #   "improvements": "specific areas to improve"
+    # }}
+    #
+    # Score: 0-100 (0 = no answer, 50 = adequate, 100 = perfect)"""
+    #
+    # response = _client.models.generate_content(
+    #     model="gemini-2.0-flash-lite",
+    #     contents=prompt,
+    # )
+    # raw = response.text.strip()
+    # raw = re.sub(r"^```[a-z]*\n?", "", raw)
+    # raw = re.sub(r"\n?```$", "", raw)
+    # raw = raw.strip()
+    # try:
+    #     data = json.loads(raw)
+    #     return {
+    #         "score": int(data["score"]),
+    #         "strengths": data["strengths"],
+    #         "improvements": data["improvements"],
+    #         "raw": data,
+    #     }
+    # except (json.JSONDecodeError, KeyError) as e:
+    #     raise ValueError(f"Gemini returned unparseable output: {e}\nRaw: {raw}")
+    # ──────────────────────────────────────────────────────────────────────────
