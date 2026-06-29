@@ -1,8 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { listQuestions } from "../api/questions";
 import { listAnswers, submitAnswer } from "../api/answers";
 import { updateInterviewStatus } from "../api/interviews";
+import { useVoiceRecording } from "../hooks/useVoiceRecording";
+import VoiceButton from "../components/VoiceButton";
 
 const formatTime = (s) =>
   `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
@@ -11,22 +13,32 @@ export default function AnswerQuestion() {
   const { sessionId, questionId } = useParams();
   const navigate = useNavigate();
 
-  const [questions, setQuestions] = useState([]);
-  const [answerText, setAnswerText] = useState("");
-  const [time, setTime] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState("");
+  const [questions,   setQuestions]   = useState([]);
+  const [answerText,  setAnswerText]  = useState("");
+  const [time,        setTime]        = useState(0);
+  const [loading,     setLoading]     = useState(true);
+  const [submitting,  setSubmitting]  = useState(false);
+  const [error,       setError]       = useState("");
   const timerRef = useRef(null);
 
-  const currentIndex = questions.findIndex(
+  const currentIndex  = questions.findIndex(
     (q) => q.id.toLowerCase().trim() === questionId.toLowerCase().trim()
   );
   const currentQuestion = questions[currentIndex];
   const isLast = currentIndex !== -1 && currentIndex === questions.length - 1;
 
-  // Load questions and pre-fill any existing answer when question changes
+  // ── Voice recording ────────────────────────────────────────────────────
+  const handleTranscript = useCallback((text) => {
+    // Append transcript to whatever is already in the textarea
+    setAnswerText((prev) => prev ? `${prev} ${text}` : text);
+  }, []);
+
+  const { isRecording, isSupported, interimText, toggle, stop } =
+    useVoiceRecording({ onTranscript: handleTranscript });
+
+  // ── Load questions + existing answer on question change ────────────────
   useEffect(() => {
+    stop(); // stop microphone when navigating to a new question
     setLoading(true);
     setTime(0);
     setAnswerText("");
@@ -44,16 +56,17 @@ export default function AnswerQuestion() {
       .finally(() => setLoading(false));
   }, [sessionId, questionId]);
 
-  // Start timer after load, reset when question changes
+  // ── Timer ──────────────────────────────────────────────────────────────
   useEffect(() => {
     if (loading) return;
     timerRef.current = setInterval(() => setTime((t) => t + 1), 1000);
     return () => clearInterval(timerRef.current);
   }, [loading, questionId]);
 
+  // ── Submit ─────────────────────────────────────────────────────────────
   const handleSubmit = async () => {
     if (!answerText.trim()) {
-      setError("Please write an answer before submitting");
+      setError("Please write or speak an answer before submitting");
       return;
     }
     if (currentIndex === -1) {
@@ -61,6 +74,7 @@ export default function AnswerQuestion() {
       return;
     }
 
+    stop(); // always stop microphone on submit
     setError("");
     setSubmitting(true);
     clearInterval(timerRef.current);
@@ -80,105 +94,160 @@ export default function AnswerQuestion() {
     } catch (err) {
       setError(err.response?.data?.detail || "Failed to submit answer — check your connection");
     } finally {
-      // Always reset submitting so the button never stays stuck
       setSubmitting(false);
     }
   };
 
   if (loading) return (
-    <div className="min-h-screen bg-gray-900 flex items-center justify-center text-white">
+    <div style={{ minHeight: "100vh", background: "#111827", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff" }}>
       Loading question...
     </div>
   );
 
   if (!currentQuestion) return (
-    <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center text-white gap-4">
-      <p className="text-red-400">Question not found</p>
-      <button
-        onClick={() => navigate("/dashboard")}
-        className="text-indigo-400 hover:underline text-sm"
-      >
+    <div style={{ minHeight: "100vh", background: "#111827", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "#fff", gap: 16 }}>
+      <p style={{ color: "#f87171" }}>Question not found</p>
+      <button onClick={() => navigate("/dashboard")} style={{ color: "#818cf8", background: "none", border: "none", cursor: "pointer", fontSize: 14 }}>
         Back to Dashboard
       </button>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white flex flex-col">
-      {/* Progress Header */}
-      <div className="border-b border-gray-800 px-8 py-4 flex items-center justify-between">
-        <button
-          onClick={() => navigate(`/interview/${sessionId}`)}
-          className="text-gray-400 hover:text-white text-sm transition"
-        >
+    <div style={{ minHeight: "100vh", background: "#111827", color: "#fff", display: "flex", flexDirection: "column" }}>
+
+      {/* Header */}
+      <div style={{ borderBottom: "1px solid #1f2937", padding: "16px 32px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <button onClick={() => navigate(`/interview/${sessionId}`)}
+          style={{ color: "#9ca3af", background: "none", border: "none", cursor: "pointer", fontSize: 14 }}>
           ← Questions
         </button>
-        <div className="flex items-center gap-6">
-          <div className="flex gap-2">
+
+        {/* Progress dots */}
+        <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
+          <div style={{ display: "flex", gap: 8 }}>
             {questions.map((q, i) => (
-              <div
-                key={q.id}
-                className={`w-2.5 h-2.5 rounded-full transition ${
-                  i === currentIndex
-                    ? "bg-indigo-500"
-                    : i < currentIndex
-                    ? "bg-green-500"
-                    : "bg-gray-600"
-                }`}
-              />
+              <div key={q.id} style={{
+                width: 10, height: 10, borderRadius: "50%",
+                background: i === currentIndex ? "#6366f1" : i < currentIndex ? "#22c55e" : "#374151",
+                transition: "background 0.2s",
+              }} />
             ))}
           </div>
-          <span className="text-sm text-gray-400">
+          <span style={{ color: "#9ca3af", fontSize: 14 }}>
             Question {currentIndex + 1} of {questions.length}
           </span>
         </div>
-        <div className="flex items-center gap-2 text-sm font-mono bg-gray-800 px-3 py-1 rounded-lg">
-          <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-          {formatTime(time)}
+
+        {/* Timer + recording indicator */}
+        <div style={{
+          display: "flex", alignItems: "center", gap: 8,
+          background: "#1f2937", padding: "6px 12px", borderRadius: 8,
+          fontSize: 13, fontFamily: "monospace",
+          border: isRecording ? "1px solid rgba(239,68,68,0.5)" : "1px solid transparent",
+        }}>
+          <span style={{
+            width: 8, height: 8, borderRadius: "50%",
+            background: isRecording ? "#ef4444" : "#4ade80",
+            display: "inline-block",
+            animation: isRecording ? "pulse 1.2s infinite" : "none",
+          }} />
+          {isRecording ? "Recording..." : formatTime(time)}
+          <style>{`@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(1.3)} }`}</style>
         </div>
       </div>
 
-      {/* Question + Answer */}
-      <div className="flex-1 max-w-3xl mx-auto w-full px-8 py-10 flex flex-col gap-8">
+      {/* Content */}
+      <div style={{ flex: 1, maxWidth: 768, margin: "0 auto", width: "100%", padding: "40px 32px", display: "flex", flexDirection: "column", gap: 24 }}>
+
+        {/* Category badge */}
         {currentQuestion.category && (
-          <span className="self-start text-xs px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-400">
+          <span style={{
+            alignSelf: "flex-start", fontSize: 12, padding: "4px 12px",
+            borderRadius: 999, background: "rgba(99,102,241,0.15)", color: "#818cf8",
+          }}>
             {currentQuestion.category}
           </span>
         )}
 
-        <div className="bg-gray-800 border border-gray-700 rounded-2xl p-6">
-          <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">Question</p>
-          <p className="text-lg leading-relaxed">{currentQuestion.question_text}</p>
+        {/* Question card */}
+        <div style={{ background: "#1f2937", border: "1px solid #374151", borderRadius: 16, padding: 24 }}>
+          <p style={{ color: "#6b7280", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 12 }}>Question</p>
+          <p style={{ fontSize: 17, lineHeight: 1.7, margin: 0 }}>{currentQuestion.question_text}</p>
         </div>
 
-        <div className="flex flex-col flex-1 gap-2">
-          <label className="text-sm text-gray-400">Your Answer</label>
+        {/* Answer area */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, flex: 1 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <label style={{ color: "#9ca3af", fontSize: 13 }}>Your Answer</label>
+            <VoiceButton
+              isRecording={isRecording}
+              isSupported={isSupported}
+              onClick={toggle}
+            />
+          </div>
+
           <textarea
             value={answerText}
             onChange={(e) => setAnswerText(e.target.value)}
-            placeholder="Type your answer here..."
-            rows={10}
-            className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500 resize-none leading-relaxed"
+            placeholder={isSupported
+              ? "Type your answer, or click '🎤 Speak Answer' to use your voice..."
+              : "Type your answer here..."}
+            rows={9}
+            style={{
+              width: "100%", padding: "12px 16px", boxSizing: "border-box",
+              background: "#1f2937", border: `1px solid ${isRecording ? "#6366f1" : "#374151"}`,
+              borderRadius: 12, color: "#fff", fontSize: 15, lineHeight: 1.6,
+              resize: "none", outline: "none", fontFamily: "inherit",
+              transition: "border-color 0.2s",
+            }}
           />
+
+          {/* Live interim transcript */}
+          {interimText && (
+            <div style={{
+              background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.2)",
+              borderRadius: 8, padding: "8px 12px",
+            }}>
+              <p style={{ color: "#6b7280", fontSize: 11, marginBottom: 4 }}>Listening...</p>
+              <p style={{ color: "#9ca3af", fontSize: 14, fontStyle: "italic", margin: 0 }}>
+                {interimText}
+              </p>
+            </div>
+          )}
+
+          {/* Voice not supported notice */}
+          {!isSupported && (
+            <p style={{ color: "#6b7280", fontSize: 12 }}>
+              Voice input requires Chrome or Edge. Use the text area to type your answer.
+            </p>
+          )}
         </div>
 
-        {error && <p className="text-red-400 text-sm">{error}</p>}
+        {error && <p style={{ color: "#f87171", fontSize: 14 }}>{error}</p>}
 
-        <div className="flex justify-between items-center">
+        {/* Navigation buttons */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <button
-            onClick={() =>
-              currentIndex > 0 &&
-              navigate(`/interview/${sessionId}/answer/${questions[currentIndex - 1].id}`)
-            }
+            onClick={() => currentIndex > 0 && navigate(`/interview/${sessionId}/answer/${questions[currentIndex - 1].id}`)}
             disabled={currentIndex === 0}
-            className="px-5 py-2 border border-gray-600 hover:border-gray-400 rounded-lg text-sm disabled:opacity-30 disabled:cursor-not-allowed transition"
+            style={{
+              padding: "10px 20px", borderRadius: 8, fontSize: 13, cursor: "pointer",
+              border: "1px solid #4b5563", background: "transparent", color: "#fff",
+              opacity: currentIndex === 0 ? 0.3 : 1,
+            }}
           >
             ← Previous
           </button>
           <button
             onClick={handleSubmit}
             disabled={submitting}
-            className="px-8 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-semibold text-sm transition"
+            style={{
+              padding: "10px 32px", borderRadius: 8, fontSize: 14, fontWeight: 600,
+              cursor: "pointer", border: "none",
+              background: submitting ? "#4338ca" : "#4f46e5", color: "#fff",
+              opacity: submitting ? 0.6 : 1,
+            }}
           >
             {submitting ? "Saving..." : isLast ? "Submit & Finish ✓" : "Submit & Next →"}
           </button>
