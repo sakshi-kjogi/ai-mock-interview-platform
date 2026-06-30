@@ -19,6 +19,7 @@ class SessionStatus(str, enum.Enum):
     in_progress = "in_progress"
     completed = "completed"
     abandoned = "abandoned"
+    terminated = "terminated"  # NEW — auto-ended due to integrity violations
 
 
 class InterviewSession(Base):
@@ -34,3 +35,4 @@ class InterviewSession(Base):
 
     user = relationship("User", back_populates="interview_sessions")
     questions = relationship("Question", back_populates="session")
+    violations = relationship("SessionViolation", back_populates="session")

@@ -144,7 +144,7 @@ export default function InterviewSession() {
 <div className="text-center">
   {questions.length > 0 ? (
     <button
-      onClick={() => navigate(`/interview/${id}/answer/${questions[0].id}`)}
+      onClick={() => navigate(`/interview/${id}/rules`)}
       className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 rounded-lg font-semibold transition"
     >
       Begin Answering →

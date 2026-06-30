@@ -10,7 +10,9 @@ import AnswerQuestion from "./pages/AnswerQuestion";
 import InterviewComplete from "./pages/InterviewComplete";
 import FeedbackPage from "./pages/FeedbackPage";
 import ResumePage from "./pages/ResumePage";
+import InterviewRules from "./pages/InterviewRules";
 
+// Inside <Routes>, add:
 export default function App() {
   return (
     <BrowserRouter>
@@ -26,6 +28,9 @@ export default function App() {
           <Route path="/interview/:sessionId/feedback" element={<ProtectedRoute><FeedbackPage /></ProtectedRoute>} />
           <Route path="/resume" element={<ProtectedRoute><ResumePage /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/login" replace />} />
+          <Route path="/interview/:id/rules" element={
+          <ProtectedRoute><InterviewRules /></ProtectedRoute>} />
+
         </Routes>
       </AuthProvider>
     </BrowserRouter>

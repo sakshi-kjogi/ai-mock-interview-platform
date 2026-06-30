@@ -5,6 +5,7 @@ from app.models.answer import Answer
 from app.models.feedback import Feedback
 from app.models.resume import Resume
 from app.models.resume_feedback import ResumeFeedback, ActionType, Priority
+from app.models.session_violation import SessionViolation, ViolationType
 
 __all__ = [
     "User",
@@ -18,4 +19,6 @@ __all__ = [
     "ResumeFeedback",
     "ActionType",
     "Priority",
+    "SessionViolation",
+    "ViolationType",
 ]

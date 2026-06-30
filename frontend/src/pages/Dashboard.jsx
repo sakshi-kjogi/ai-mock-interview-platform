@@ -13,8 +13,14 @@ const STATUS_COLORS = {
   in_progress: { bg: "rgba(234,179,8,0.15)",  color: "#facc15" },
   completed:   { bg: "rgba(34,197,94,0.15)",   color: "#4ade80" },
   abandoned:   { bg: "rgba(239,68,68,0.15)",   color: "#f87171" },
+  terminated:  { bg: "rgba(239,68,68,0.15)",   color: "#f87171" },
 };
-const STATUS_LABELS = { in_progress: "In Progress", completed: "Completed", abandoned: "Abandoned" };
+const STATUS_LABELS = {
+  in_progress: "In Progress",
+  completed:   "Completed",
+  abandoned:   "Abandoned",
+  terminated:  "Terminated",
+};
 
 const fmtTime = (s) => {
   if (!s) return "—";
