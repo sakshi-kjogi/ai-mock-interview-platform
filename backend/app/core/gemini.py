@@ -14,8 +14,6 @@ _CATEGORY_HINTS = {
     "system_design": "scalability, database design, API design, architecture, trade-offs",
 }
 
-# Larger pool — {role} is replaced with the actual role_title at runtime.
-# random.sample picks a fresh subset every call, so Regenerate gives new questions.
 _MOCK_QUESTION_POOL = {
     "technical": [
         {"question_text": "As a {role}, explain the difference between a stack and a queue and give a real-world use case for each.", "category": "data structures"},
@@ -67,122 +65,114 @@ def generate_interview_questions(
     interview_type: str,
     num_questions: int = 5,
 ) -> list[dict]:
-    # ── MOCK MODE ──────────────────────────────────────────────────────────────
-    # Uses a pool of 12 questions per type. random.sample picks a fresh subset
-    # every call so Regenerate returns different questions.
-    # {role} in question_text is replaced with the actual role_title.
+    # ── MOCK MODE ──────────────────────────────────────────────────────────
     pool = _MOCK_QUESTION_POOL.get(interview_type, _MOCK_QUESTION_POOL["technical"])
     selected = random.sample(pool, min(num_questions, len(pool)))
     return [
-        {
-            "question_text": q["question_text"].format(role=role_title),
-            "category": q["category"],
-        }
+        {"question_text": q["question_text"].format(role=role_title), "category": q["category"]}
         for q in selected
     ]
-    # ──────────────────────────────────────────────────────────────────────────
+    # ──────────────────────────────────────────────────────────────────────
 
-    # ── REAL GEMINI CALL (uncomment when quota is available) ──────────────────
+    # ── REAL GEMINI CALL (uncomment when quota is available) ──────────────
     # category_hint = _CATEGORY_HINTS.get(interview_type, "general")
     # prompt = f"""You are an expert technical interviewer.
     # Generate exactly {num_questions} {interview_type} interview questions for the role: {role_title}.
-    #
     # Use one of these categories for each question: {category_hint}.
-    #
     # Return ONLY a valid JSON object. No markdown, no code fences, no explanation:
-    # {{
-    #   "questions": [
-    #     {{
-    #       "question_text": "full question text here",
-    #       "category": "category name here"
-    #     }}
-    #   ]
-    # }}"""
-    #
-    # response = _client.models.generate_content(
-    #     model="gemini-2.0-flash-lite",
-    #     contents=prompt,
-    # )
-    # raw = response.text.strip()
-    # raw = re.sub(r"^```[a-z]*\n?", "", raw)
-    # raw = re.sub(r"\n?```$", "", raw)
-    # raw = raw.strip()
-    # try:
-    #     data = json.loads(raw)
-    #     return data["questions"]
-    # except (json.JSONDecodeError, KeyError) as e:
-    #     raise ValueError(f"Gemini returned unparseable output: {e}\nRaw: {raw}")
-    # ──────────────────────────────────────────────────────────────────────────
+    # {{"questions": [{{"question_text": "...", "category": "..."}}]}}"""
+    # response = _client.models.generate_content(model="gemini-2.0-flash-lite", contents=prompt)
+    # raw = re.sub(r"^```[a-z]*\n?", "", response.text.strip())
+    # raw = re.sub(r"\n?```$", "", raw).strip()
+    # data = json.loads(raw)
+    # return data["questions"]
+    # ──────────────────────────────────────────────────────────────────────
 
 
 def evaluate_answer(question_text: str, answer_text: str) -> dict:
-    # ── MOCK MODE ──────────────────────────────────────────────────────────────
+    # ── MOCK MODE ──────────────────────────────────────────────────────────
     word_count = len(answer_text.strip().split())
-
     if word_count < 20:
-        score, strengths, improvements = (
-            35,
-            "Attempted to address the question.",
-            "Answer is too brief. Elaborate with specific examples and cover edge cases.",
-        )
+        score, strengths, improvements = (35, "Attempted to address the question.", "Answer is too brief. Elaborate with specific examples and cover edge cases.")
     elif word_count < 50:
-        score, strengths, improvements = (
-            58,
-            "Shows basic understanding. Covers the main point adequately.",
-            "Expand with concrete examples. Discuss trade-offs and real-world applications.",
-        )
+        score, strengths, improvements = (58, "Shows basic understanding. Covers the main point adequately.", "Expand with concrete examples. Discuss trade-offs and real-world applications.")
     elif word_count < 100:
-        score, strengths, improvements = (
-            74,
-            "Good understanding demonstrated. Clear explanation with reasonable depth.",
-            "Consider discussing edge cases. A concrete example would strengthen this further.",
-        )
+        score, strengths, improvements = (74, "Good understanding demonstrated. Clear explanation with reasonable depth.", "Consider discussing edge cases. A concrete example would strengthen this further.")
     else:
-        score, strengths, improvements = (
-            88,
-            "Comprehensive answer showing strong understanding. Well-structured with good depth.",
-            "Minor refinements: ensure conciseness and that key points are clearly highlighted.",
-        )
+        score, strengths, improvements = (88, "Comprehensive answer showing strong understanding. Well-structured with good depth.", "Minor refinements: ensure conciseness and that key points are clearly highlighted.")
+    return {"score": score, "strengths": strengths, "improvements": improvements, "raw": {"word_count": word_count, "mock": True}}
+    # ──────────────────────────────────────────────────────────────────────
 
-    return {
-        "score": score,
-        "strengths": strengths,
-        "improvements": improvements,
-        "raw": {"word_count": word_count, "mock": True},
-    }
-    # ──────────────────────────────────────────────────────────────────────────
-
-    # ── REAL GEMINI CALL (uncomment when quota is available) ──────────────────
+    # ── REAL GEMINI CALL (uncomment when quota is available) ──────────────
     # prompt = f"""You are an expert interviewer evaluating a candidate's response.
-    #
     # Question: {question_text}
     # Candidate's Answer: {answer_text}
-    #
-    # Evaluate the answer and return ONLY a valid JSON object, no markdown:
-    # {{
-    #   "score": 75,
-    #   "strengths": "what the candidate did well",
-    #   "improvements": "specific areas to improve"
-    # }}
-    #
-    # Score: 0-100 (0 = no answer, 50 = adequate, 100 = perfect)"""
-    #
-    # response = _client.models.generate_content(
-    #     model="gemini-2.0-flash-lite",
-    #     contents=prompt,
-    # )
-    # raw = response.text.strip()
-    # raw = re.sub(r"^```[a-z]*\n?", "", raw)
-    # raw = re.sub(r"\n?```$", "", raw)
-    # raw = raw.strip()
-    # try:
-    #     data = json.loads(raw)
-    #     return {
-    #         "score": int(data["score"]),
-    #         "strengths": data["strengths"],
-    #         "improvements": data["improvements"],
-    #         "raw": data,
-    #     }
-    # except (json.JSONDecodeError, KeyError) as e:
-    #     raise ValueError(f"Gemini returned unparseable output: {e}\nRaw: {raw}")
-    # ──────────────────────────────────────────────────────────────────────────
+    # Return ONLY valid JSON, no markdown:
+    # {{"score": 75, "strengths": "...", "improvements": "..."}}
+    # Score: 0-100"""
+    # response = _client.models.generate_content(model="gemini-2.0-flash-lite", contents=prompt)
+    # raw = re.sub(r"^```[a-z]*\n?", "", response.text.strip())
+    # raw = re.sub(r"\n?```$", "", raw).strip()
+    # data = json.loads(raw)
+    # return {"score": int(data["score"]), "strengths": data["strengths"], "improvements": data["improvements"], "raw": data}
+    # ──────────────────────────────────────────────────────────────────────
+
+
+def analyze_resume(resume_text: str) -> list[dict]:
+    # ── MOCK MODE ──────────────────────────────────────────────────────────
+    return [
+        {"category": "experience", "action_type": "rephrase", "suggestion_text": "Start every bullet point with a strong action verb (Led, Built, Optimised, Delivered) instead of passive phrases like 'Responsible for' or 'Helped with'.", "priority": "high"},
+        {"category": "skills", "action_type": "add", "suggestion_text": "Add quantifiable metrics to achievements — e.g. 'Reduced API response time by 40%' instead of 'Improved API performance'.", "priority": "high"},
+        {"category": "formatting", "action_type": "remove", "suggestion_text": "Remove a generic Objective or Summary section. Replace with a focused 2-line professional summary tailored to your target role.", "priority": "medium"},
+        {"category": "skills", "action_type": "add", "suggestion_text": "Add a dedicated Technical Skills section grouped by category: Languages, Frameworks, Databases, Tools. Recruiters scan for this pattern.", "priority": "medium"},
+        {"category": "experience", "action_type": "remove", "suggestion_text": "Remove work experience older than 10 years unless directly relevant. Older roles dilute focus and add unnecessary length.", "priority": "low"},
+        {"category": "education", "action_type": "rephrase", "suggestion_text": "If you have 3+ years of experience, move Education below Experience. Recruiters prioritise what you have built over where you studied.", "priority": "low"},
+    ]
+    # ──────────────────────────────────────────────────────────────────────
+
+    # ── REAL GEMINI CALL (uncomment when quota is available) ──────────────
+    # prompt = f"""You are an expert resume reviewer. Analyse this resume and provide specific improvement suggestions.
+    # Return ONLY valid JSON, no markdown:
+    # {{"suggestions": [{{"category": "skills|experience|formatting|education", "action_type": "add|remove|rephrase", "suggestion_text": "...", "priority": "high|medium|low"}}]}}
+    # Resume: {resume_text[:3000]}"""
+    # response = _client.models.generate_content(model="gemini-2.0-flash-lite", contents=prompt)
+    # raw = re.sub(r"^```[a-z]*\n?", "", response.text.strip())
+    # raw = re.sub(r"\n?```$", "", raw).strip()
+    # return json.loads(raw)["suggestions"]
+    # ──────────────────────────────────────────────────────────────────────
+
+
+def generate_resume_questions(
+    resume_text: str,
+    role_title: str,
+    interview_type: str,
+    num_questions: int = 5,
+) -> list[dict]:
+    # ── MOCK MODE ──────────────────────────────────────────────────────────
+    pool = [
+        {"question_text": f"Walk me through your most relevant experience for the {role_title} role.", "category": "experience"},
+        {"question_text": "Tell me about the project on your resume you're most proud of. What was your specific contribution?", "category": "experience"},
+        {"question_text": f"How has your background prepared you for the challenges of a {role_title} position?", "category": "experience"},
+        {"question_text": "Pick one skill from your resume and give a concrete example of how you used it to solve a real problem.", "category": "problem solving"},
+        {"question_text": "Is there a gap or area of growth in your resume you'd like to address? How are you working on it?", "category": "adaptability"},
+        {"question_text": "Describe the most technically complex project on your resume. What were the key decisions you made?", "category": "system design"},
+        {"question_text": "How have your skills evolved since your earliest role? What drove that growth?", "category": "adaptability"},
+        {"question_text": f"Which experience on your resume best qualifies you for the {role_title} role and why?", "category": "communication"},
+        {"question_text": "Tell me about a time from your work history when you had to learn a new technology quickly.", "category": "adaptability"},
+        {"question_text": "Which role on your resume taught you the most? What did you take away from it?", "category": "leadership"},
+        {"question_text": "Describe a situation from your resume where you had to collaborate across teams. What was your approach?", "category": "teamwork"},
+        {"question_text": f"What achievement on your resume are you most proud of and how does it relate to being a {role_title}?", "category": "communication"},
+    ]
+    return random.sample(pool, min(num_questions, len(pool)))
+    # ──────────────────────────────────────────────────────────────────────
+
+    # ── REAL GEMINI CALL (uncomment when quota is available) ──────────────
+    # prompt = f"""You are an expert interviewer. Generate {num_questions} {interview_type} interview questions
+    # for a {role_title} candidate based on their resume. Questions should reference their specific experience.
+    # Resume (first 2000 chars): {resume_text[:2000]}
+    # Return ONLY valid JSON: {{"questions": [{{"question_text": "...", "category": "..."}}]}}"""
+    # response = _client.models.generate_content(model="gemini-2.0-flash-lite", contents=prompt)
+    # raw = re.sub(r"^```[a-z]*\n?", "", response.text.strip())
+    # raw = re.sub(r"\n?```$", "", raw).strip()
+    # return json.loads(raw)["questions"]
+    # ──────────────────────────────────────────────────────────────────────

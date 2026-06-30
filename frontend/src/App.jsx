@@ -9,32 +9,22 @@ import InterviewSession from "./pages/InterviewSession";
 import AnswerQuestion from "./pages/AnswerQuestion";
 import InterviewComplete from "./pages/InterviewComplete";
 import FeedbackPage from "./pages/FeedbackPage";
+import ResumePage from "./pages/ResumePage";
 
 export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
         <Routes>
-          <Route path="/login" element={<Login />} />
+          <Route path="/login"    element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/dashboard" element={
-            <ProtectedRoute><Dashboard /></ProtectedRoute>
-          } />
-          <Route path="/interview/setup" element={
-            <ProtectedRoute><InterviewSetup /></ProtectedRoute>
-          } />
-          <Route path="/interview/:id" element={
-            <ProtectedRoute><InterviewSession /></ProtectedRoute>
-          } />
-          <Route path="/interview/:sessionId/answer/:questionId" element={
-            <ProtectedRoute><AnswerQuestion /></ProtectedRoute>
-          } />
-          <Route path="/interview/:sessionId/complete" element={
-            <ProtectedRoute><InterviewComplete /></ProtectedRoute>
-          } />
-          <Route path="/interview/:sessionId/feedback" element={
-            <ProtectedRoute><FeedbackPage /></ProtectedRoute>
-          } />
+          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/interview/setup" element={<ProtectedRoute><InterviewSetup /></ProtectedRoute>} />
+          <Route path="/interview/:id" element={<ProtectedRoute><InterviewSession /></ProtectedRoute>} />
+          <Route path="/interview/:sessionId/answer/:questionId" element={<ProtectedRoute><AnswerQuestion /></ProtectedRoute>} />
+          <Route path="/interview/:sessionId/complete" element={<ProtectedRoute><InterviewComplete /></ProtectedRoute>} />
+          <Route path="/interview/:sessionId/feedback" element={<ProtectedRoute><FeedbackPage /></ProtectedRoute>} />
+          <Route path="/resume" element={<ProtectedRoute><ResumePage /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </AuthProvider>
