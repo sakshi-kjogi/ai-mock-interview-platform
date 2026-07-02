@@ -10,3 +10,4 @@ python-jose[cryptography]
 bcrypt
 google-genai
 pypdf
+slowapi

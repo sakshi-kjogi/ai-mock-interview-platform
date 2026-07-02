@@ -3,14 +3,17 @@ import { useNavigate, Link } from "react-router-dom";
 import api from "../api/axiosInstance";
 import Button from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
+import PasswordStrength from "../components/ui/PasswordStrength";
 
 export default function Register() {
-  const [form, setForm] = useState({ full_name: "", email: "", password: "" });
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [form,     setForm]     = useState({ full_name: "", email: "", password: "" });
+  const [error,    setError]    = useState("");
+  const [loading,  setLoading]  = useState(false);
+  const [capsLock, setCapsLock] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e) => setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
+  const handleKeyDown = (e) => setCapsLock(e.getModifierState?.("CapsLock") ?? false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -20,7 +23,12 @@ export default function Register() {
       await api.post("/api/v1/auth/register", form);
       navigate("/login");
     } catch (err) {
-      setError(err.response?.data?.detail || "Registration failed. Please try again.");
+      const status = err.response?.status;
+      if (status === 429) {
+        setError("Too many registration attempts. Please wait a minute and try again.");
+      } else {
+        setError(err.response?.data?.detail || "Registration failed. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -30,7 +38,8 @@ export default function Register() {
     <div style={{ minHeight: "100vh", display: "flex", background: "#111827" }}>
       {/* Left panel */}
       <div style={{
-        width: 420, flexShrink: 0, background: "linear-gradient(135deg, #1e1b4b 0%, #111827 100%)",
+        width: 420, flexShrink: 0,
+        background: "linear-gradient(135deg, #1e1b4b 0%, #111827 100%)",
         display: "flex", flexDirection: "column", justifyContent: "center",
         padding: "48px 40px", borderRight: "1px solid #1f2937",
       }}>
@@ -58,8 +67,8 @@ export default function Register() {
       </div>
 
       {/* Right panel */}
-      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 32 }}>
-        <div className="page-enter" style={{ width: "100%", maxWidth: 380 }}>
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 32, overflowY: "auto" }}>
+        <div className="page-enter" style={{ width: "100%", maxWidth: 380, padding: "24px 0" }}>
           <h2 style={{ fontSize: 24, fontWeight: 700, margin: "0 0 6px" }}>Create an account</h2>
           <p style={{ color: "#6b7280", fontSize: 14, margin: "0 0 28px" }}>
             Already have an account?{" "}
@@ -73,9 +82,33 @@ export default function Register() {
           )}
 
           <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            <Input name="full_name" placeholder="Jane Smith" label="Full Name" value={form.full_name} onChange={handleChange} required />
-            <Input name="email" type="email" placeholder="you@example.com" label="Email" value={form.email} onChange={handleChange} required />
-            <Input name="password" type="password" placeholder="••••••••" label="Password" value={form.password} onChange={handleChange} required />
+            <Input
+              name="full_name" label="Full Name"
+              placeholder="Jane Smith"
+              value={form.full_name} onChange={handleChange} required
+            />
+            <Input
+              name="email" type="email" label="Email"
+              placeholder="you@example.com"
+              value={form.email} onChange={handleChange} required
+            />
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <Input
+                name="password" type="password" label="Password"
+                placeholder="Create a strong password"
+                value={form.password}
+                onChange={handleChange}
+                onKeyDown={handleKeyDown}
+                required
+              />
+              {capsLock && (
+                <p style={{ color: "#f59e0b", fontSize: 12, margin: 0, display: "flex", alignItems: "center", gap: 4 }}>
+                  ⚠ Caps Lock is on
+                </p>
+              )}
+              <PasswordStrength password={form.password} />
+            </div>
+
             <Button type="submit" fullWidth loading={loading} size="lg" style={{ marginTop: 4 }}>
               {loading ? "Creating account..." : "Create Account"}
             </Button>

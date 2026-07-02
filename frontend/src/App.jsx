@@ -4,7 +4,9 @@ import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
 import Dashboard from "./pages/Dashboard";
+import ProfilePage from "./pages/ProfilePage";
 import InterviewSetup from "./pages/InterviewSetup";
 import InterviewSession from "./pages/InterviewSession";
 import AnswerQuestion from "./pages/AnswerQuestion";
@@ -15,17 +17,19 @@ import ResumePage from "./pages/ResumePage";
 import NotFound from "./pages/NotFound";
 
 const PAGE_TITLES = {
-  "/login":      "Sign In",
-  "/register":   "Create Account",
-  "/dashboard":  "Dashboard",
-  "/resume":     "Resume",
-  "/interview/setup": "New Interview",
+  "/login":            "Sign In",
+  "/register":         "Create Account",
+  "/forgot-password":  "Forgot Password",
+  "/dashboard":        "Dashboard",
+  "/resume":           "Resume",
+  "/profile":          "Profile Settings",
+  "/interview/setup":  "New Interview",
 };
 
 function TitleManager() {
   const { pathname } = useLocation();
   useEffect(() => {
-    const base = "AI Mock Interview";
+    const base  = "AI Mock Interview";
     const match = Object.entries(PAGE_TITLES).find(([path]) => pathname.startsWith(path));
     document.title = match ? `${match[1]} — ${base}` : base;
   }, [pathname]);
@@ -38,16 +42,23 @@ export default function App() {
       <AuthProvider>
         <TitleManager />
         <Routes>
-          <Route path="/login"    element={<Login />} />
-          <Route path="/register" element={<Register />} />
+          {/* Public */}
+          <Route path="/login"           element={<Login />} />
+          <Route path="/register"        element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+
+          {/* Protected */}
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/profile"   element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
           <Route path="/resume"    element={<ProtectedRoute><ResumePage /></ProtectedRoute>} />
-          <Route path="/interview/setup" element={<ProtectedRoute><InterviewSetup /></ProtectedRoute>} />
-          <Route path="/interview/:id"   element={<ProtectedRoute><InterviewSession /></ProtectedRoute>} />
+          <Route path="/interview/setup"  element={<ProtectedRoute><InterviewSetup /></ProtectedRoute>} />
+          <Route path="/interview/:id"    element={<ProtectedRoute><InterviewSession /></ProtectedRoute>} />
           <Route path="/interview/:id/rules" element={<ProtectedRoute><InterviewRules /></ProtectedRoute>} />
           <Route path="/interview/:sessionId/answer/:questionId" element={<ProtectedRoute><AnswerQuestion /></ProtectedRoute>} />
           <Route path="/interview/:sessionId/complete"  element={<ProtectedRoute><InterviewComplete /></ProtectedRoute>} />
           <Route path="/interview/:sessionId/feedback"  element={<ProtectedRoute><FeedbackPage /></ProtectedRoute>} />
+
+          {/* Fallback */}
           <Route path="/404" element={<NotFound />} />
           <Route path="*"    element={<Navigate to="/404" replace />} />
         </Routes>

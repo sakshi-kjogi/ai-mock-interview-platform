@@ -1,9 +1,16 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 
 from app.api.v1 import analytics, answers, auth, feedback, interviews, questions, resumes, violations
+from app.core.rate_limit import limiter
 
 app = FastAPI(title="AI Mock Interview Platform")
+
+# Rate limiter — must be registered before routes.
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,

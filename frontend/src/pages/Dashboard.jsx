@@ -86,10 +86,22 @@ export default function Dashboard() {
       <PageHeader
         left={<span style={{ fontSize: 16, fontWeight: 700, color: "#818cf8", letterSpacing: "-0.02em" }}>AI Mock Interview</span>}
         right={
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <span style={{ color: "#6b7280", fontSize: 13 }}>{user?.full_name}</span>
-            <Button variant="danger" size="sm" onClick={logout}>Log Out</Button>
-          </div>
+          
+<div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+  <button
+    onClick={() => navigate("/profile")}
+    style={{
+      color: "#6b7280", background: "none", border: "none",
+      cursor: "pointer", fontSize: 13, padding: 0,
+      transition: "color 0.15s",
+    }}
+    onMouseEnter={e => e.currentTarget.style.color = "#f9fafb"}
+    onMouseLeave={e => e.currentTarget.style.color = "#6b7280"}
+  >
+    {user?.full_name}
+  </button>
+  <Button variant="danger" size="sm" onClick={logout}>Log Out</Button>
+</div>
         }
       />
 
