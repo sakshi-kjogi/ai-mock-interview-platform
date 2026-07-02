@@ -13,6 +13,9 @@ from app.services.interview_service import get_session_by_id
 
 router = APIRouter(tags=["Feedback"])
 
+# Sessions that are eligible for AI evaluation.
+_EVALUABLE_STATUSES = {SessionStatus.completed, SessionStatus.terminated}
+
 
 @router.post(
     "/interviews/{session_id}/evaluate",
@@ -28,10 +31,10 @@ def evaluate_session(
     if not session:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
 
-    if session.status != SessionStatus.completed:
+    if session.status not in _EVALUABLE_STATUSES:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Session must be completed before evaluation",
+            detail="Session must be completed or terminated before evaluation",
         )
 
     try:

@@ -77,7 +77,7 @@ export default function Dashboard() {
   const statValues = [
     { label: "Total Interviews", value: analytics?.total_sessions ?? 0, sub: `${analytics?.completed_sessions ?? 0} completed` },
     { label: "Avg Score",        value: analytics?.overall_avg_score ?? "—", sub: "out of 100" },
-    { label: "Completion Rate",  value: analytics?.total_sessions > 0 ? `${analytics.completion_rate}%` : "—", sub: "sessions finished" },
+    { label: "Completion Rate",  value: analytics?.total_sessions > 0 ? `${analytics.completion_rate}%` : "—", sub: "of sessions started" },
     { label: "Avg Time / Answer",value: fmtTime(analytics?.avg_time_per_answer_seconds), sub: "per question" },
   ];
 

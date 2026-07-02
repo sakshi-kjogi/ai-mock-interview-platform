@@ -1,6 +1,20 @@
 import { useState } from "react";
 import { colors, radius, transition } from "../../styles/tokens";
 
+function EyeIcon({ open }) {
+  return open ? (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+      <line x1="1" y1="1" x2="23" y2="23"/>
+    </svg>
+  ) : (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+      <circle cx="12" cy="12" r="3"/>
+    </svg>
+  );
+}
+
 export function Input({ label, error, style = {}, type = "text", ...props }) {
   const [focused,  setFocused]  = useState(false);
   const [showPass, setShowPass] = useState(false);
@@ -10,13 +24,17 @@ export function Input({ label, error, style = {}, type = "text", ...props }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-      {label && <label style={{ color: colors.text.secondary, fontSize: 13, fontWeight: 500 }}>{label}</label>}
+      {label && (
+        <label style={{ color: colors.text.secondary, fontSize: 13, fontWeight: 500 }}>
+          {label}
+        </label>
+      )}
       <div style={{ position: "relative" }}>
         <input
           {...props}
           type={inputType}
-          onFocus={e => { setFocused(true); props.onFocus?.(e); }}
-          onBlur={e => { setFocused(false); props.onBlur?.(e); }}
+          onFocus={e => { setFocused(true);  props.onFocus?.(e); }}
+          onBlur={e =>  { setFocused(false); props.onBlur?.(e); }}
           style={{
             width: "100%",
             boxSizing: "border-box",
@@ -35,19 +53,20 @@ export function Input({ label, error, style = {}, type = "text", ...props }) {
           <button
             type="button"
             onClick={() => setShowPass((v) => !v)}
+            aria-label={showPass ? "Hide password" : "Show password"}
+            tabIndex={-1}
             style={{
-              position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)",
+              position: "absolute", right: 12, top: "50%",
+              transform: "translateY(-50%)",
               background: "none", border: "none", cursor: "pointer",
-              color: colors.text.muted, fontSize: 16, padding: 2,
+              color: colors.text.muted, padding: 2,
               display: "flex", alignItems: "center", justifyContent: "center",
               transition: transition.fast,
             }}
             onMouseEnter={e => e.currentTarget.style.color = colors.text.secondary}
             onMouseLeave={e => e.currentTarget.style.color = colors.text.muted}
-            tabIndex={-1}
-            title={showPass ? "Hide password" : "Show password"}
           >
-            {showPass ? "🙈" : "👁"}
+            <EyeIcon open={showPass} />
           </button>
         )}
       </div>
@@ -60,12 +79,16 @@ export function Textarea({ label, error, rows = 8, style = {}, ...props }) {
   const [focused, setFocused] = useState(false);
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-      {label && <label style={{ color: colors.text.secondary, fontSize: 13, fontWeight: 500 }}>{label}</label>}
+      {label && (
+        <label style={{ color: colors.text.secondary, fontSize: 13, fontWeight: 500 }}>
+          {label}
+        </label>
+      )}
       <textarea
         {...props}
         rows={rows}
-        onFocus={e => { setFocused(true); props.onFocus?.(e); }}
-        onBlur={e => { setFocused(false); props.onBlur?.(e); }}
+        onFocus={e => { setFocused(true);  props.onFocus?.(e); }}
+        onBlur={e =>  { setFocused(false); props.onBlur?.(e); }}
         style={{
           width: "100%",
           boxSizing: "border-box",

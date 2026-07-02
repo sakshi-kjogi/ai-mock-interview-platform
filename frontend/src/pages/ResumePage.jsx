@@ -50,6 +50,7 @@ export default function ResumePage() {
   const handleUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    e.target.value = "";
     setUploading(true); setError("");
     try {
       const r = await uploadResume(file);
