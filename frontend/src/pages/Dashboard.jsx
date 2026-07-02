@@ -1,19 +1,23 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  BarChart, Bar, LineChart, Line,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-} from "recharts";
+import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { useAuth } from "../context/AuthContext";
 import { listInterviews } from "../api/interviews";
 import { getDashboardAnalytics } from "../api/analytics";
+import Button from "../components/ui/Button";
+import Badge from "../components/ui/Badge";
+import PageHeader from "../components/ui/PageHeader";
+import EmptyState from "../components/ui/EmptyState";
+import { SkeletonStatCard, SkeletonCard } from "../components/ui/Skeleton";
 
 const TYPE_LABELS = { technical: "Technical", behavioral: "Behavioral", system_design: "System Design" };
-const STATUS_COLORS = {
-  in_progress: { bg: "rgba(234,179,8,0.15)",  color: "#facc15" },
-  completed:   { bg: "rgba(34,197,94,0.15)",   color: "#4ade80" },
-  abandoned:   { bg: "rgba(239,68,68,0.15)",   color: "#f87171" },
-  terminated:  { bg: "rgba(239,68,68,0.15)",   color: "#f87171" },
+const TYPE_ICONS  = { technical: "💻", behavioral: "🤝", system_design: "🏗️" };
+
+const STATUS_VARIANT = {
+  in_progress: "warning",
+  completed:   "success",
+  abandoned:   "danger",
+  terminated:  "terminated",
 };
 const STATUS_LABELS = {
   in_progress: "In Progress",
@@ -28,12 +32,17 @@ const fmtTime = (s) => {
   return m > 0 ? `${m}m ${Math.round(s % 60)}s` : `${Math.round(s)}s`;
 };
 
-function StatCard({ label, value, sub }) {
+const STAT_ICONS = ["🎯", "⭐", "✅", "⏱️"];
+
+function StatCard({ label, value, sub, icon }) {
   return (
-    <div style={{ background: "#1f2937", border: "1px solid #374151", borderRadius: 12, padding: 20, flex: 1 }}>
-      <p style={{ color: "#9ca3af", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>{label}</p>
-      <p style={{ color: "#fff", fontSize: 28, fontWeight: 700, margin: 0 }}>{value}</p>
-      {sub && <p style={{ color: "#6b7280", fontSize: 11, marginTop: 4 }}>{sub}</p>}
+    <div style={{ background: "#1f2937", border: "1px solid #374151", borderRadius: 12, padding: "20px 20px 16px", flex: 1, display: "flex", flexDirection: "column", gap: 4 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+        <p style={{ color: "#6b7280", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", margin: 0 }}>{label}</p>
+        <span style={{ fontSize: 16 }}>{icon}</span>
+      </div>
+      <p style={{ color: "#f9fafb", fontSize: 30, fontWeight: 700, margin: 0, lineHeight: 1 }}>{value}</p>
+      {sub && <p style={{ color: "#6b7280", fontSize: 12, margin: "4px 0 0" }}>{sub}</p>}
     </div>
   );
 }
@@ -41,9 +50,9 @@ function StatCard({ label, value, sub }) {
 function ChartTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
   return (
-    <div style={{ background: "#1f2937", border: "1px solid #374151", borderRadius: 8, padding: "8px 12px", fontSize: 13 }}>
-      <p style={{ color: "#9ca3af", fontSize: 11, marginBottom: 2 }}>{label}</p>
-      <p style={{ color: "#fff", fontWeight: 600 }}>{payload[0].value} pts</p>
+    <div style={{ background: "#1f2937", border: "1px solid #374151", borderRadius: 8, padding: "8px 12px", fontSize: 13, boxShadow: "0 4px 12px rgba(0,0,0,0.4)" }}>
+      <p style={{ color: "#9ca3af", fontSize: 11, margin: "0 0 4px" }}>{label}</p>
+      <p style={{ color: "#fff", fontWeight: 600, margin: 0 }}>{payload[0].value} pts</p>
     </div>
   );
 }
@@ -51,7 +60,6 @@ function ChartTooltip({ active, payload, label }) {
 export default function Dashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-
   const [sessions,  setSessions]  = useState([]);
   const [analytics, setAnalytics] = useState(null);
   const [loading,   setLoading]   = useState(true);
@@ -63,127 +71,134 @@ export default function Dashboard() {
       .finally(() => setLoading(false));
   }, []);
 
-  const trendData = analytics?.score_trend.map((s, i) => ({
-    name: `#${i + 1}`, score: s.avg_score,
-  })) ?? [];
+  const trendData    = analytics?.score_trend.map((s, i) => ({ name: `#${i + 1}`, score: s.avg_score })) ?? [];
+  const categoryData = analytics?.category_breakdown.map((c) => ({ name: c.category, score: c.avg_score })) ?? [];
 
-  const categoryData = analytics?.category_breakdown.map((c) => ({
-    name: c.category, score: c.avg_score,
-  })) ?? [];
+  const statValues = [
+    { label: "Total Interviews", value: analytics?.total_sessions ?? 0, sub: `${analytics?.completed_sessions ?? 0} completed` },
+    { label: "Avg Score",        value: analytics?.overall_avg_score ?? "—", sub: "out of 100" },
+    { label: "Completion Rate",  value: analytics?.total_sessions > 0 ? `${analytics.completion_rate}%` : "—", sub: "sessions finished" },
+    { label: "Avg Time / Answer",value: fmtTime(analytics?.avg_time_per_answer_seconds), sub: "per question" },
+  ];
 
   return (
-    <div style={{ minHeight: "100vh", background: "#111827", color: "#fff", fontFamily: "inherit" }}>
+    <div className="page-enter" style={{ minHeight: "100vh", background: "#111827", color: "#f9fafb" }}>
+      <PageHeader
+        left={<span style={{ fontSize: 16, fontWeight: 700, color: "#818cf8", letterSpacing: "-0.02em" }}>AI Mock Interview</span>}
+        right={
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <span style={{ color: "#6b7280", fontSize: 13 }}>{user?.full_name}</span>
+            <Button variant="danger" size="sm" onClick={logout}>Log Out</Button>
+          </div>
+        }
+      />
 
-      {/* Header */}
-      <div style={{ borderBottom: "1px solid #1f2937", padding: "16px 32px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <span style={{ fontSize: 20, fontWeight: 700, color: "#818cf8" }}>AI Mock Interview</span>
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <span style={{ color: "#9ca3af", fontSize: 14 }}>{user?.full_name}</span>
-          <button onClick={logout}
-            style={{ background: "#dc2626", border: "none", color: "#fff", padding: "6px 14px", borderRadius: 8, fontSize: 13, cursor: "pointer" }}>
-            Log Out
-          </button>
-        </div>
-      </div>
-
-      <div style={{ maxWidth: 1024, margin: "0 auto", padding: "40px 32px" }}>
-
+      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "36px 32px" }}>
         {/* Welcome row */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 32 }}>
           <div>
-            <h2 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>Welcome back, {user?.full_name} 👋</h2>
-            <p style={{ color: "#9ca3af", fontSize: 14, marginTop: 4 }}>Here's how you're progressing</p>
+            <h2 style={{ fontSize: 22, fontWeight: 700, margin: "0 0 4px" }}>Welcome back, {user?.full_name} 👋</h2>
+            <p style={{ color: "#6b7280", fontSize: 14, margin: 0 }}>Here's how you're progressing</p>
           </div>
           <div style={{ display: "flex", gap: 10 }}>
-            <button onClick={() => navigate("/resume")}
-              style={{ background: "transparent", border: "1px solid #4b5563", color: "#d1d5db", padding: "10px 16px", borderRadius: 8, fontWeight: 600, fontSize: 14, cursor: "pointer" }}>
-              📄 Resume
-            </button>
-            <button onClick={() => navigate("/interview/setup")}
-              style={{ background: "#4f46e5", border: "none", color: "#fff", padding: "10px 20px", borderRadius: 8, fontWeight: 600, fontSize: 14, cursor: "pointer" }}>
-              + New Interview
-            </button>
+            <Button variant="secondary" onClick={() => navigate("/resume")}>📄 Resume</Button>
+            <Button onClick={() => navigate("/interview/setup")}>+ New Interview</Button>
           </div>
         </div>
 
+        {/* Stat Cards */}
+        <div style={{ display: "flex", gap: 16, marginBottom: 28 }}>
+          {loading
+            ? Array.from({ length: 4 }).map((_, i) => <SkeletonStatCard key={i} />)
+            : statValues.map((s, i) => <StatCard key={s.label} {...s} icon={STAT_ICONS[i]} />)
+          }
+        </div>
+
+        {/* Charts */}
         {loading ? (
-          <p style={{ color: "#6b7280", fontSize: 14 }}>Loading analytics...</p>
+          <div style={{ display: "flex", gap: 24, marginBottom: 28 }}>
+            <SkeletonCard key="a" lines={4} />
+            <SkeletonCard key="b" lines={4} />
+          </div>
+        ) : trendData.length > 0 || categoryData.length > 0 ? (
+          <div style={{ display: "flex", gap: 24, marginBottom: 28 }}>
+            {trendData.length > 0 && (
+              <div style={{ flex: 1, background: "#1f2937", border: "1px solid #374151", borderRadius: 12, padding: 20 }}>
+                <p style={{ fontWeight: 600, fontSize: 13, color: "#d1d5db", margin: "0 0 16px" }}>📈 Score Trend</p>
+                <ResponsiveContainer width="100%" height={200}>
+                  <LineChart data={trendData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                    <XAxis dataKey="name" tick={{ fill: "#6b7280", fontSize: 11 }} />
+                    <YAxis domain={[0, 100]} tick={{ fill: "#6b7280", fontSize: 11 }} />
+                    <Tooltip content={<ChartTooltip />} />
+                    <Line type="monotone" dataKey="score" stroke="#6366f1" strokeWidth={2} dot={{ fill: "#6366f1", r: 4 }} activeDot={{ r: 6 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+            {categoryData.length > 0 && (
+              <div style={{ flex: 1, background: "#1f2937", border: "1px solid #374151", borderRadius: 12, padding: 20 }}>
+                <p style={{ fontWeight: 600, fontSize: 13, color: "#d1d5db", margin: "0 0 16px" }}>🏷️ Category Breakdown</p>
+                <ResponsiveContainer width="100%" height={200}>
+                  <BarChart data={categoryData} layout="vertical" margin={{ left: 16 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                    <XAxis type="number" domain={[0, 100]} tick={{ fill: "#6b7280", fontSize: 11 }} />
+                    <YAxis type="category" dataKey="name" width={100} tick={{ fill: "#6b7280", fontSize: 10 }} />
+                    <Tooltip content={<ChartTooltip />} />
+                    <Bar dataKey="score" radius={[0, 4, 4, 0]} fill="#6366f1" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </div>
         ) : (
-          <>
-            {/* Stat Cards */}
-            <div style={{ display: "flex", gap: 16, marginBottom: 32 }}>
-              <StatCard label="Total Interviews" value={analytics?.total_sessions ?? 0} sub={`${analytics?.completed_sessions ?? 0} completed`} />
-              <StatCard label="Avg Score" value={analytics?.overall_avg_score ?? "—"} sub="out of 100" />
-              <StatCard label="Completion Rate" value={analytics?.total_sessions > 0 ? `${analytics.completion_rate}%` : "—"} sub="sessions finished" />
-              <StatCard label="Avg Time / Answer" value={fmtTime(analytics?.avg_time_per_answer_seconds)} sub="per question" />
-            </div>
+          <EmptyState
+            icon="📊"
+            title="No analytics yet"
+            description="Complete an interview with AI feedback to see your performance charts here."
+            style={{ marginBottom: 28 }}
+          />
+        )}
 
-            {/* Charts */}
-            {trendData.length > 0 || categoryData.length > 0 ? (
-              <div style={{ display: "flex", gap: 24, marginBottom: 32 }}>
-                {trendData.length > 0 && (
-                  <div style={{ flex: 1, background: "#1f2937", border: "1px solid #374151", borderRadius: 12, padding: 20 }}>
-                    <p style={{ fontWeight: 600, fontSize: 13, color: "#d1d5db", marginBottom: 16 }}>Score Trend</p>
-                    <ResponsiveContainer width="100%" height={200}>
-                      <LineChart data={trendData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                        <XAxis dataKey="name" tick={{ fill: "#9ca3af", fontSize: 11 }} />
-                        <YAxis domain={[0, 100]} tick={{ fill: "#9ca3af", fontSize: 11 }} />
-                        <Tooltip content={<ChartTooltip />} />
-                        <Line type="monotone" dataKey="score" stroke="#6366f1" strokeWidth={2} dot={{ fill: "#6366f1", r: 4 }} activeDot={{ r: 6 }} />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                )}
-                {categoryData.length > 0 && (
-                  <div style={{ flex: 1, background: "#1f2937", border: "1px solid #374151", borderRadius: 12, padding: 20 }}>
-                    <p style={{ fontWeight: 600, fontSize: 13, color: "#d1d5db", marginBottom: 16 }}>Category Breakdown</p>
-                    <ResponsiveContainer width="100%" height={200}>
-                      <BarChart data={categoryData} layout="vertical" margin={{ left: 16 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                        <XAxis type="number" domain={[0, 100]} tick={{ fill: "#9ca3af", fontSize: 11 }} />
-                        <YAxis type="category" dataKey="name" width={100} tick={{ fill: "#9ca3af", fontSize: 10 }} />
-                        <Tooltip content={<ChartTooltip />} />
-                        <Bar dataKey="score" radius={[0, 4, 4, 0]} fill="#6366f1" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div style={{ background: "#1f2937", border: "1px dashed #374151", borderRadius: 12, padding: 32, textAlign: "center", marginBottom: 32 }}>
-                <p style={{ color: "#6b7280", fontSize: 14 }}>Complete an interview with feedback to see your analytics charts</p>
-              </div>
-            )}
+        {/* Past Sessions */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+          <p style={{ fontWeight: 600, fontSize: 15, color: "#d1d5db", margin: 0 }}>Past Sessions</p>
+          <span style={{ color: "#6b7280", fontSize: 13 }}>{sessions.length} total</span>
+        </div>
 
-            {/* Past Sessions */}
-            <p style={{ fontWeight: 600, fontSize: 16, color: "#d1d5db", marginBottom: 16 }}>Past Sessions</p>
-            {sessions.length === 0 ? (
-              <div style={{ border: "1px dashed #374151", borderRadius: 12, padding: 40, textAlign: "center", color: "#6b7280" }}>
-                <p style={{ fontSize: 18, marginBottom: 8 }}>No interviews yet</p>
-                <p style={{ fontSize: 13 }}>Click "+ New Interview" to get started</p>
-              </div>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                {sessions.map((s) => (
-                  <div key={s.id} onClick={() => navigate(`/interview/${s.id}`)}
-                    style={{ background: "#1f2937", border: "1px solid #374151", borderRadius: 12, padding: "16px 24px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", transition: "border-color 0.2s" }}
-                    onMouseEnter={e => e.currentTarget.style.borderColor = "#6366f1"}
-                    onMouseLeave={e => e.currentTarget.style.borderColor = "#374151"}>
-                    <div>
-                      <p style={{ fontWeight: 600, fontSize: 15, margin: 0 }}>{s.role_title}</p>
-                      <p style={{ color: "#9ca3af", fontSize: 13, marginTop: 2 }}>
-                        {TYPE_LABELS[s.interview_type]} · {new Date(s.created_at).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <span style={{ background: STATUS_COLORS[s.status]?.bg, color: STATUS_COLORS[s.status]?.color, fontSize: 12, fontWeight: 500, padding: "4px 12px", borderRadius: 999 }}>
-                      {STATUS_LABELS[s.status]}
-                    </span>
+        {loading ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} lines={1} />)}
+          </div>
+        ) : sessions.length === 0 ? (
+          <EmptyState
+            icon="🎯"
+            title="No interviews yet"
+            description="Click '+ New Interview' to start your first mock interview session."
+            action={<Button onClick={() => navigate("/interview/setup")}>Start your first interview</Button>}
+          />
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {sessions.map((s) => (
+              <div key={s.id} onClick={() => navigate(`/interview/${s.id}`)}
+                style={{ background: "#1f2937", border: "1px solid #374151", borderRadius: 12, padding: "14px 20px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", transition: "all 0.15s ease" }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = "#6366f1"; e.currentTarget.style.background = "#1e2d3d"; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = "#374151"; e.currentTarget.style.background = "#1f2937"; }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <span style={{ fontSize: 20 }}>{TYPE_ICONS[s.interview_type] || "🎯"}</span>
+                  <div>
+                    <p style={{ fontWeight: 600, fontSize: 14, margin: 0 }}>{s.role_title}</p>
+                    <p style={{ color: "#6b7280", fontSize: 12, margin: "2px 0 0" }}>
+                      {TYPE_LABELS[s.interview_type]} · {new Date(s.created_at).toLocaleDateString()}
+                    </p>
                   </div>
-                ))}
+                </div>
+                <Badge variant={STATUS_VARIANT[s.status] || "info"}>
+                  {STATUS_LABELS[s.status] || s.status}
+                </Badge>
               </div>
-            )}
-          </>
+            ))}
+          </div>
         )}
       </div>
     </div>
