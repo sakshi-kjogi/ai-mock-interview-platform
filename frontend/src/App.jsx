@@ -2,6 +2,8 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-route
 import { useEffect } from "react";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
+
+import LandingPage from "./pages/LandingPage";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -14,24 +16,29 @@ import InterviewComplete from "./pages/InterviewComplete";
 import FeedbackPage from "./pages/FeedbackPage";
 import InterviewRules from "./pages/InterviewRules";
 import ResumePage from "./pages/ResumePage";
+import NotificationsPage from "./pages/NotificationsPage";
 import NotFound from "./pages/NotFound";
 
 const PAGE_TITLES = {
+  "/":                 "InterviewAI — Ace Your Interviews with AI",
   "/login":            "Sign In",
   "/register":         "Create Account",
   "/forgot-password":  "Forgot Password",
   "/dashboard":        "Dashboard",
   "/resume":           "Resume",
   "/profile":          "Profile Settings",
+  "/notifications":    "Notifications",
   "/interview/setup":  "New Interview",
 };
 
 function TitleManager() {
   const { pathname } = useLocation();
   useEffect(() => {
-    const base  = "AI Mock Interview";
-    const match = Object.entries(PAGE_TITLES).find(([path]) => pathname.startsWith(path));
-    document.title = match ? `${match[1]} — ${base}` : base;
+    const base  = "InterviewAI";
+    const exact = PAGE_TITLES[pathname];
+    if (exact) { document.title = pathname === "/" ? exact : `${exact} — ${base}`; return; }
+    const prefix = Object.entries(PAGE_TITLES).find(([p]) => p !== "/" && pathname.startsWith(p));
+    document.title = prefix ? `${prefix[1]} — ${base}` : base;
   }, [pathname]);
   return null;
 }
@@ -43,20 +50,24 @@ export default function App() {
         <TitleManager />
         <Routes>
           {/* Public */}
-          <Route path="/login"           element={<Login />} />
-          <Route path="/register"        element={<Register />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/"               element={<LandingPage />} />
+          <Route path="/login"          element={<Login />} />
+          <Route path="/register"       element={<Register />} />
+          <Route path="/forgot-password"element={<ForgotPassword />} />
 
-          {/* Protected */}
-          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          <Route path="/profile"   element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-          <Route path="/resume"    element={<ProtectedRoute><ResumePage /></ProtectedRoute>} />
+          {/* Protected — with sidebar (AppLayout inside each page) */}
+          <Route path="/dashboard"     element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/profile"       element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+          <Route path="/resume"        element={<ProtectedRoute><ResumePage /></ProtectedRoute>} />
+          <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
           <Route path="/interview/setup"  element={<ProtectedRoute><InterviewSetup /></ProtectedRoute>} />
           <Route path="/interview/:id"    element={<ProtectedRoute><InterviewSession /></ProtectedRoute>} />
-          <Route path="/interview/:id/rules" element={<ProtectedRoute><InterviewRules /></ProtectedRoute>} />
-          <Route path="/interview/:sessionId/answer/:questionId" element={<ProtectedRoute><AnswerQuestion /></ProtectedRoute>} />
-          <Route path="/interview/:sessionId/complete"  element={<ProtectedRoute><InterviewComplete /></ProtectedRoute>} />
-          <Route path="/interview/:sessionId/feedback"  element={<ProtectedRoute><FeedbackPage /></ProtectedRoute>} />
+          <Route path="/interview/:sessionId/complete" element={<ProtectedRoute><InterviewComplete /></ProtectedRoute>} />
+          <Route path="/interview/:sessionId/feedback" element={<ProtectedRoute><FeedbackPage /></ProtectedRoute>} />
+
+          {/* Protected — NO sidebar (fullscreen interview flow) */}
+          <Route path="/interview/:id/rules"                        element={<ProtectedRoute><InterviewRules /></ProtectedRoute>} />
+          <Route path="/interview/:sessionId/answer/:questionId"    element={<ProtectedRoute><AnswerQuestion /></ProtectedRoute>} />
 
           {/* Fallback */}
           <Route path="/404" element={<NotFound />} />
