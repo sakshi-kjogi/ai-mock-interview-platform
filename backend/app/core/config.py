@@ -10,12 +10,20 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
     GEMINI_API_KEY: str
 
+    # Comma-separated list of allowed origins.
+    # e.g. "http://localhost:5173,https://your-app.vercel.app"
+    ALLOWED_ORIGINS: str = "http://localhost:5173"
+
     @field_validator("DATABASE_URL")
     @classmethod
     def fix_postgres_scheme(cls, v: str) -> str:
         if v.startswith("postgres://"):
             v = v.replace("postgres://", "postgresql://", 1)
         return v
+
+    @property
+    def origins_list(self) -> list[str]:
+        return [o.strip() for o in self.ALLOWED_ORIGINS.split(",") if o.strip()]
 
     class Config:
         env_file = ".env"
