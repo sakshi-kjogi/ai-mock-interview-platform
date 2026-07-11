@@ -5,9 +5,11 @@ import AppLayout from "../components/AppLayout";
 import Button from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import PasswordStrength from "../components/ui/PasswordStrength";
+import useIsMobile from "../hooks/useIsMobile";
 
 export default function ProfilePage() {
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const [form,    setForm]    = useState({ current_password: "", new_password: "", confirm_password: "" });
   const [success, setSuccess] = useState(false);
   const [error,   setError]   = useState("");
@@ -26,25 +28,25 @@ export default function ProfilePage() {
 
   return (
     <AppLayout>
-      <div className="page-enter" style={{ padding: "28px 32px", maxWidth: 640 }}>
-        <h1 style={{ fontSize: 20, fontWeight: 700, margin: "0 0 4px" }}>Profile Settings</h1>
+      <div className="page-enter" style={{ padding: isMobile ? "20px 16px" : "28px 32px", maxWidth: 640, boxSizing: "border-box" }}>
+        <h1 style={{ fontSize: isMobile ? 18 : 20, fontWeight: 700, margin: "0 0 4px" }}>Profile Settings</h1>
         <p style={{ color: "#6b7280", fontSize: 13, margin: "0 0 28px" }}>Manage your personal information and account settings</p>
 
         {/* Account Info */}
-        <div style={{ background: "#1f2937", border: "1px solid #374151", borderRadius: 14, padding: 24, marginBottom: 20 }}>
+        <div style={{ background: "#1f2937", border: "1px solid #374151", borderRadius: 14, padding: isMobile ? 16 : 24, marginBottom: 20 }}>
           <h2 style={{ fontSize: 14, fontWeight: 600, margin: "0 0 16px" }}>Account Information</h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {[["Full Name", user?.full_name], ["Email", user?.email]].map(([k, v]) => (
-              <div key={k} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: 12, borderBottom: "1px solid #374151" }}>
-                <span style={{ color: "#6b7280", fontSize: 13 }}>{k}</span>
-                <span style={{ color: "#f9fafb", fontSize: 14, fontWeight: 500 }}>{v}</span>
+              <div key={k} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, paddingBottom: 12, borderBottom: "1px solid #374151" }}>
+                <span style={{ color: "#6b7280", fontSize: 13, flexShrink: 0 }}>{k}</span>
+                <span style={{ color: "#f9fafb", fontSize: 14, fontWeight: 500, textAlign: "right", overflowWrap: "anywhere", minWidth: 0 }}>{v}</span>
               </div>
             ))}
           </div>
         </div>
 
         {/* Change Password */}
-        <div style={{ background: "#1f2937", border: "1px solid #374151", borderRadius: 14, padding: 24, marginBottom: 20 }}>
+        <div style={{ background: "#1f2937", border: "1px solid #374151", borderRadius: 14, padding: isMobile ? 16 : 24, marginBottom: 20 }}>
           <h2 style={{ fontSize: 14, fontWeight: 600, margin: "0 0 16px" }}>Change Password</h2>
 
           {success && (
@@ -65,14 +67,14 @@ export default function ProfilePage() {
               <PasswordStrength password={form.new_password} />
             </div>
             <Input name="confirm_password" type="password" label="Confirm New Password" placeholder="Repeat your new password" value={form.confirm_password} onChange={handleChange} required />
-            <Button type="submit" loading={loading} disabled={!form.current_password || !form.new_password || !form.confirm_password}>
+            <Button type="submit" loading={loading} disabled={!form.current_password || !form.new_password || !form.confirm_password} fullWidth={isMobile}>
               Update Password
             </Button>
           </form>
         </div>
 
         {/* Security */}
-        <div style={{ background: "#1f2937", border: "1px solid #374151", borderRadius: 14, padding: 24 }}>
+        <div style={{ background: "#1f2937", border: "1px solid #374151", borderRadius: 14, padding: isMobile ? 16 : 24 }}>
           <h2 style={{ fontSize: 14, fontWeight: 600, margin: "0 0 14px" }}>🔒 Security</h2>
           {[["Passwords hashed with bcrypt","Never stored in plain text"],["JWT session tokens","Expire automatically after 30 minutes"],["Rate limiting active","Brute-force protection on auth endpoints"]].map(([t, d]) => (
             <div key={t} style={{ display: "flex", gap: 10, marginBottom: 12 }}>

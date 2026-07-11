@@ -7,6 +7,7 @@ import { logViolation } from "../api/violations";
 import { useVoiceRecording } from "../hooks/useVoiceRecording";
 import { useIntegrityMonitor } from "../hooks/useIntegrityMonitor";
 import VoiceButton from "../components/VoiceButton";
+import useIsMobile from "../hooks/useIsMobile";
 
 const formatTime = (s) =>
   `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
@@ -24,6 +25,7 @@ const VIOLATION_LABELS = {
 export default function AnswerQuestion() {
   const { sessionId, questionId } = useParams();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
   const [questions,  setQuestions]  = useState([]);
   const [answerText, setAnswerText] = useState("");
@@ -163,7 +165,7 @@ export default function AnswerQuestion() {
   );
 
   return (
-    <div style={{ minHeight: "100vh", background: "#111827", color: "#fff", display: "flex", flexDirection: "column", position: "relative" }}>
+    <div style={{ minHeight: "100vh", background: "#111827", color: "#fff", display: "flex", flexDirection: "column", position: "relative", overflowX: "hidden" }}>
 
       {/* Violation toast */}
       {banner && (
@@ -172,6 +174,7 @@ export default function AnswerQuestion() {
           background: "#7f1d1d", border: "1px solid #ef4444", color: "#fff",
           padding: "10px 20px", borderRadius: 10, fontSize: 13, zIndex: 100,
           display: "flex", alignItems: "center", gap: 10, boxShadow: "0 4px 20px rgba(0,0,0,0.4)",
+          maxWidth: "90vw", boxSizing: "border-box",
         }}>
           <span>⚠️</span>
           <span><strong>{banner.label}</strong> — Violation {banner.count} of 3</span>
@@ -182,9 +185,9 @@ export default function AnswerQuestion() {
       {!isFullscreen && (
         <div style={{
           position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)",
-          display: "flex", alignItems: "center", justifyContent: "center", zIndex: 90,
+          display: "flex", alignItems: "center", justifyContent: "center", zIndex: 90, padding: 20, boxSizing: "border-box",
         }}>
-          <div style={{ background: "#1f2937", border: "1px solid #374151", borderRadius: 16, padding: 32, textAlign: "center", maxWidth: 360 }}>
+          <div style={{ background: "#1f2937", border: "1px solid #374151", borderRadius: 16, padding: 32, textAlign: "center", maxWidth: 360, width: "100%" }}>
             <p style={{ fontSize: 32, marginBottom: 12 }}>🖥️</p>
             <p style={{ fontWeight: 600, fontSize: 16, marginBottom: 8 }}>Fullscreen Required</p>
             <p style={{ color: "#9ca3af", fontSize: 13, marginBottom: 20 }}>
@@ -199,45 +202,81 @@ export default function AnswerQuestion() {
       )}
 
       {/* Header */}
-      <div style={{ borderBottom: "1px solid #1f2937", padding: "16px 32px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <button onClick={handleExit}
-          style={{ color: "#9ca3af", background: "none", border: "none", cursor: "pointer", fontSize: 14 }}>
-          Exit Interview
-        </button>
-
-        <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
-          <div style={{ display: "flex", gap: 8 }}>
-            {questions.map((q, i) => (
-              <div key={q.id} style={{
-                width: 10, height: 10, borderRadius: "50%",
-                background: i === currentIndex ? "#6366f1" : i < currentIndex ? "#22c55e" : "#374151",
+      {isMobile ? (
+        <div style={{ borderBottom: "1px solid #1f2937", padding: "12px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <button onClick={handleExit}
+              style={{ color: "#9ca3af", background: "none", border: "none", cursor: "pointer", fontSize: 13, padding: 0 }}>
+              Exit
+            </button>
+            <span style={{ color: "#9ca3af", fontSize: 13 }}>
+              Q{currentIndex + 1} of {questions.length}
+            </span>
+            <div style={{
+              display: "flex", alignItems: "center", gap: 6,
+              background: "#1f2937", padding: "5px 10px", borderRadius: 8,
+              fontSize: 12, fontFamily: "monospace",
+              border: isRecording ? "1px solid rgba(239,68,68,0.5)" : "1px solid transparent",
+            }}>
+              <span style={{
+                width: 7, height: 7, borderRadius: "50%",
+                background: isRecording ? "#ef4444" : "#4ade80",
+                display: "inline-block",
+                animation: isRecording ? "pulse 1.2s infinite" : "none",
               }} />
-            ))}
+              {isRecording ? "Rec" : formatTime(time)}
+              <style>{`@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(1.3)} }`}</style>
+            </div>
           </div>
-          <span style={{ color: "#9ca3af", fontSize: 14 }}>
-            Question {currentIndex + 1} of {questions.length}
-          </span>
+          {/* Compact progress bar instead of individual dots to avoid overflow */}
+          <div style={{ height: 4, background: "#1f2937", borderRadius: 2, overflow: "hidden" }}>
+            <div style={{
+              width: `${((currentIndex + 1) / Math.max(questions.length, 1)) * 100}%`,
+              height: "100%", background: "#6366f1", borderRadius: 2, transition: "width 0.3s ease",
+            }} />
+          </div>
         </div>
+      ) : (
+        <div style={{ borderBottom: "1px solid #1f2937", padding: "16px 32px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <button onClick={handleExit}
+            style={{ color: "#9ca3af", background: "none", border: "none", cursor: "pointer", fontSize: 14 }}>
+            Exit Interview
+          </button>
 
-        <div style={{
-          display: "flex", alignItems: "center", gap: 8,
-          background: "#1f2937", padding: "6px 12px", borderRadius: 8,
-          fontSize: 13, fontFamily: "monospace",
-          border: isRecording ? "1px solid rgba(239,68,68,0.5)" : "1px solid transparent",
-        }}>
-          <span style={{
-            width: 8, height: 8, borderRadius: "50%",
-            background: isRecording ? "#ef4444" : "#4ade80",
-            display: "inline-block",
-            animation: isRecording ? "pulse 1.2s infinite" : "none",
-          }} />
-          {isRecording ? "Recording..." : formatTime(time)}
-          <style>{`@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(1.3)} }`}</style>
+          <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
+            <div style={{ display: "flex", gap: 8 }}>
+              {questions.map((q, i) => (
+                <div key={q.id} style={{
+                  width: 10, height: 10, borderRadius: "50%",
+                  background: i === currentIndex ? "#6366f1" : i < currentIndex ? "#22c55e" : "#374151",
+                }} />
+              ))}
+            </div>
+            <span style={{ color: "#9ca3af", fontSize: 14 }}>
+              Question {currentIndex + 1} of {questions.length}
+            </span>
+          </div>
+
+          <div style={{
+            display: "flex", alignItems: "center", gap: 8,
+            background: "#1f2937", padding: "6px 12px", borderRadius: 8,
+            fontSize: 13, fontFamily: "monospace",
+            border: isRecording ? "1px solid rgba(239,68,68,0.5)" : "1px solid transparent",
+          }}>
+            <span style={{
+              width: 8, height: 8, borderRadius: "50%",
+              background: isRecording ? "#ef4444" : "#4ade80",
+              display: "inline-block",
+              animation: isRecording ? "pulse 1.2s infinite" : "none",
+            }} />
+            {isRecording ? "Recording..." : formatTime(time)}
+            <style>{`@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(1.3)} }`}</style>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Content */}
-      <div style={{ flex: 1, maxWidth: 768, margin: "0 auto", width: "100%", padding: "40px 32px", display: "flex", flexDirection: "column", gap: 24 }}>
+      <div style={{ flex: 1, maxWidth: 768, margin: "0 auto", width: "100%", padding: isMobile ? "20px 16px" : "40px 32px", display: "flex", flexDirection: "column", gap: isMobile ? 16 : 24, boxSizing: "border-box" }}>
 
         {currentQuestion.category && (
           <span style={{ alignSelf: "flex-start", fontSize: 12, padding: "4px 12px", borderRadius: 999, background: "rgba(99,102,241,0.15)", color: "#818cf8" }}>
@@ -245,9 +284,9 @@ export default function AnswerQuestion() {
           </span>
         )}
 
-        <div style={{ background: "#1f2937", border: "1px solid #374151", borderRadius: 16, padding: 24 }}>
+        <div style={{ background: "#1f2937", border: "1px solid #374151", borderRadius: 16, padding: isMobile ? 16 : 24 }}>
           <p style={{ color: "#6b7280", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 12 }}>Question</p>
-          <p style={{ fontSize: 17, lineHeight: 1.7, margin: 0 }}>{currentQuestion.question_text}</p>
+          <p style={{ fontSize: isMobile ? 15 : 17, lineHeight: 1.7, margin: 0 }}>{currentQuestion.question_text}</p>
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 8, flex: 1 }}>
@@ -262,9 +301,9 @@ export default function AnswerQuestion() {
             placeholder={isSupported
               ? "Type your answer, or click '🎤 Speak Answer' to use your voice..."
               : "Type your answer here..."}
-            rows={9}
+            rows={isMobile ? 7 : 9}
             style={{
-              width: "100%", padding: "12px 16px", boxSizing: "border-box",
+              width: "100%", padding: isMobile ? "10px 12px" : "12px 16px", boxSizing: "border-box",
               background: "#1f2937", border: `1px solid ${isRecording ? "#6366f1" : "#374151"}`,
               borderRadius: 12, color: "#fff", fontSize: 15, lineHeight: 1.6,
               resize: "none", outline: "none", fontFamily: "inherit",
@@ -287,18 +326,18 @@ export default function AnswerQuestion() {
 
         {error && <p style={{ color: "#f87171", fontSize: 14 }}>{error}</p>}
 
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
           <button
             onClick={() => currentIndex > 0 && navigate(`/interview/${sessionId}/answer/${questions[currentIndex - 1].id}`)}
             disabled={currentIndex === 0}
-            style={{ padding: "10px 20px", borderRadius: 8, fontSize: 13, cursor: "pointer", border: "1px solid #4b5563", background: "transparent", color: "#fff", opacity: currentIndex === 0 ? 0.3 : 1 }}
+            style={{ padding: isMobile ? "10px 14px" : "10px 20px", borderRadius: 8, fontSize: 13, cursor: "pointer", border: "1px solid #4b5563", background: "transparent", color: "#fff", opacity: currentIndex === 0 ? 0.3 : 1, flexShrink: 0 }}
           >
-            ← Previous
+            ← {isMobile ? "" : "Previous"}
           </button>
           <button
             onClick={handleSubmit}
             disabled={submitting}
-            style={{ padding: "10px 32px", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", border: "none", background: submitting ? "#4338ca" : "#4f46e5", color: "#fff", opacity: submitting ? 0.6 : 1 }}
+            style={{ padding: isMobile ? "10px 20px" : "10px 32px", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", border: "none", background: submitting ? "#4338ca" : "#4f46e5", color: "#fff", opacity: submitting ? 0.6 : 1, flex: isMobile ? 1 : "none" }}
           >
             {submitting ? "Saving..." : isLast ? "Submit & Finish ✓" : "Submit & Next →"}
           </button>

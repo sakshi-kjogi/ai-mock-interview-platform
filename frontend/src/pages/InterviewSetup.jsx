@@ -4,6 +4,7 @@ import { createInterview } from "../api/interviews";
 import AppLayout from "../components/AppLayout";
 import Button from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
+import useIsMobile from "../hooks/useIsMobile";
 
 const INTERVIEW_TYPES = [
   { value: "technical",     label: "Technical",     icon: "💻" },
@@ -13,6 +14,7 @@ const INTERVIEW_TYPES = [
 
 export default function InterviewSetup() {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [roleTitle,     setRoleTitle]     = useState("");
   const [interviewType, setInterviewType] = useState("technical");
   const [error,         setError]         = useState("");
@@ -31,7 +33,7 @@ export default function InterviewSetup() {
 
   return (
     <AppLayout>
-      <div className="page-enter" style={{ padding: "28px 32px", maxWidth: 640 }}>
+      <div className="page-enter" style={{ padding: isMobile ? "20px 16px" : "28px 32px", maxWidth: 640, boxSizing: "border-box" }}>
         <button onClick={() => navigate("/dashboard")}
           style={{ display: "flex", alignItems: "center", gap: 6, color: "#6b7280", background: "none", border: "none", cursor: "pointer", fontSize: 13, padding: 0, marginBottom: 24 }}
           onMouseEnter={e => e.currentTarget.style.color = "#f9fafb"}
@@ -39,7 +41,7 @@ export default function InterviewSetup() {
           ← Back
         </button>
 
-        <h1 style={{ fontSize: 22, fontWeight: 700, margin: "0 0 4px" }}>Create New Interview</h1>
+        <h1 style={{ fontSize: isMobile ? 19 : 22, fontWeight: 700, margin: "0 0 4px" }}>Create New Interview</h1>
         <p style={{ color: "#6b7280", fontSize: 13, margin: "0 0 28px" }}>Configure your interview preferences</p>
 
         {error && (
@@ -53,19 +55,20 @@ export default function InterviewSetup() {
 
           <div>
             <label style={{ color: "#9ca3af", fontSize: 13, fontWeight: 500, display: "block", marginBottom: 10 }}>Interview Type</label>
-            <div style={{ display: "flex", gap: 10 }}>
+            <div style={{ display: "flex", gap: isMobile ? 6 : 10 }}>
               {INTERVIEW_TYPES.map((t) => (
                 <button key={t.value} onClick={() => setInterviewType(t.value)}
                   style={{
-                    flex: 1, padding: "12px 8px", borderRadius: 10, cursor: "pointer",
+                    flex: 1, padding: isMobile ? "10px 4px" : "12px 8px", borderRadius: 10, cursor: "pointer",
                     border: `2px solid ${interviewType === t.value ? "#6366f1" : "#374151"}`,
                     background: interviewType === t.value ? "rgba(99,102,241,0.1)" : "#1f2937",
                     color: interviewType === t.value ? "#818cf8" : "#6b7280",
                     fontWeight: interviewType === t.value ? 600 : 400,
-                    fontSize: 13, transition: "all 0.15s",
+                    fontSize: isMobile ? 11 : 13, transition: "all 0.15s",
                     display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
+                    minWidth: 0, textAlign: "center",
                   }}>
-                  <span style={{ fontSize: 20 }}>{t.icon}</span>
+                  <span style={{ fontSize: isMobile ? 18 : 20 }}>{t.icon}</span>
                   {t.label}
                 </button>
               ))}

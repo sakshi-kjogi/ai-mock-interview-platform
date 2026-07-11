@@ -5,6 +5,7 @@ import { generateQuestions, listQuestions } from "../api/questions";
 import AppLayout from "../components/AppLayout";
 import Button from "../components/ui/Button";
 import { Skeleton } from "../components/ui/Skeleton";
+import useIsMobile from "../hooks/useIsMobile";
 
 const TYPE_LABELS = { technical: "Technical", behavioral: "Behavioral", system_design: "System Design" };
 const CATEGORY_COLORS = {
@@ -22,6 +23,7 @@ const catStyle = (cat) => CATEGORY_COLORS[cat?.toLowerCase()] || { bg: "rgba(99,
 export default function InterviewSession() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [session,     setSession]     = useState(null);
   const [questions,   setQuestions]   = useState([]);
   const [pageLoading, setPageLoading] = useState(true);
@@ -44,7 +46,7 @@ export default function InterviewSession() {
 
   if (pageLoading) return (
     <AppLayout>
-      <div style={{ padding: "28px 32px", display: "flex", flexDirection: "column", gap: 16, maxWidth: 700 }}>
+      <div style={{ padding: isMobile ? "20px 16px" : "28px 32px", display: "flex", flexDirection: "column", gap: 16, maxWidth: 700, boxSizing: "border-box" }}>
         <Skeleton height={24} width="40%" />
         {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} height={80} style={{ borderRadius: 12 }} />)}
       </div>
@@ -53,7 +55,7 @@ export default function InterviewSession() {
 
   return (
     <AppLayout>
-      <div className="page-enter" style={{ padding: "28px 32px" }}>
+      <div className="page-enter" style={{ padding: isMobile ? "20px 16px" : "28px 32px", boxSizing: "border-box" }}>
         <button onClick={() => navigate("/dashboard")}
           style={{ color: "#6b7280", background: "none", border: "none", cursor: "pointer", fontSize: 13, padding: "0 0 20px" }}
           onMouseEnter={e => e.currentTarget.style.color = "#f9fafb"}
@@ -61,27 +63,27 @@ export default function InterviewSession() {
           ← Dashboard
         </button>
 
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-          <div>
-            <h1 style={{ fontSize: 20, fontWeight: 700, margin: "0 0 4px" }}>{session?.role_title} Interview</h1>
+        <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", justifyContent: "space-between", alignItems: isMobile ? "flex-start" : "center", gap: isMobile ? 12 : 0, marginBottom: 24 }}>
+          <div style={{ minWidth: 0 }}>
+            <h1 style={{ fontSize: isMobile ? 18 : 20, fontWeight: 700, margin: "0 0 4px" }}>{session?.role_title} Interview</h1>
             <p style={{ color: "#6b7280", fontSize: 13, margin: 0 }}>{TYPE_LABELS[session?.interview_type]} · {questions.length} questions</p>
           </div>
           {questions.length > 0 && (
-            <Button variant="secondary" size="sm" loading={generating} onClick={handleGenerate}>
+            <Button variant="secondary" size="sm" loading={generating} onClick={handleGenerate} fullWidth={isMobile}>
               ↺ Regenerate
             </Button>
           )}
         </div>
 
         {questions.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "60px 32px" }}>
+          <div style={{ textAlign: "center", padding: isMobile ? "40px 16px" : "60px 32px" }}>
             <div style={{ width: 72, height: 72, borderRadius: "50%", background: "rgba(99,102,241,0.15)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px", fontSize: 32 }}>🤖</div>
             <h2 style={{ fontSize: 18, fontWeight: 700, margin: "0 0 8px" }}>Ready to generate questions</h2>
             <p style={{ color: "#6b7280", fontSize: 14, margin: "0 0 24px" }}>
               Gemini AI will create tailored questions for <strong style={{ color: "#f9fafb" }}>{session?.role_title}</strong>.
             </p>
             {error && <p style={{ color: "#f87171", fontSize: 13, marginBottom: 16 }}>{error}</p>}
-            <Button loading={generating} onClick={handleGenerate} size="lg">
+            <Button loading={generating} onClick={handleGenerate} size="lg" fullWidth={isMobile}>
               ✨ Generate Questions
             </Button>
           </div>
@@ -91,10 +93,10 @@ export default function InterviewSession() {
               {questions.map((q, i) => {
                 const cs = catStyle(q.category);
                 return (
-                  <div key={q.id} style={{ background: "#1f2937", border: "1px solid #374151", borderRadius: 12, padding: 18 }}>
-                    <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
-                      <span style={{ color: "#6366f1", fontWeight: 700, fontSize: 14, minWidth: 26 }}>Q{i + 1}.</span>
-                      <div style={{ flex: 1 }}>
+                  <div key={q.id} style={{ background: "#1f2937", border: "1px solid #374151", borderRadius: 12, padding: isMobile ? 14 : 18 }}>
+                    <div style={{ display: "flex", gap: isMobile ? 10 : 14, alignItems: "flex-start" }}>
+                      <span style={{ color: "#6366f1", fontWeight: 700, fontSize: 14, minWidth: 26, flexShrink: 0 }}>Q{i + 1}.</span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
                         <p style={{ fontSize: 14, lineHeight: 1.6, margin: "0 0 10px" }}>{q.question_text}</p>
                         {q.category && (
                           <span style={{ fontSize: 11, padding: "3px 8px", borderRadius: 4, background: cs.bg, color: cs.color, fontWeight: 500 }}>
@@ -107,7 +109,7 @@ export default function InterviewSession() {
                 );
               })}
             </div>
-            <Button size="lg" onClick={() => navigate(`/interview/${id}/rules`)}>
+            <Button size="lg" onClick={() => navigate(`/interview/${id}/rules`)} fullWidth={isMobile}>
               Begin Answering →
             </Button>
           </>

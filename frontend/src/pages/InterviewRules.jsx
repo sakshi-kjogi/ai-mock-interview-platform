@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { listQuestions } from "../api/questions";
 import Button from "../components/ui/Button";
 import PageHeader from "../components/ui/PageHeader";
+import useIsMobile from "../hooks/useIsMobile";
 
 const RULES = [
   { icon: "🖥️", title: "Fullscreen is required", desc: "The interview runs in fullscreen mode. Exiting counts as a violation.", severity: "high" },
@@ -14,6 +15,7 @@ const RULES = [
 export default function InterviewRules() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [acknowledged, setAcknowledged] = useState(false);
   const [starting,     setStarting]     = useState(false);
   const [error,        setError]        = useState("");
@@ -33,7 +35,7 @@ export default function InterviewRules() {
   };
 
   return (
-    <div className="page-enter" style={{ minHeight: "100vh", background: "#111827", color: "#f9fafb" }}>
+    <div className="page-enter" style={{ minHeight: "100vh", background: "#111827", color: "#f9fafb", overflowX: "hidden" }}>
       <PageHeader
         left={
           <button onClick={() => navigate(`/interview/${id}`)}
@@ -46,10 +48,10 @@ export default function InterviewRules() {
         center={<span style={{ fontSize: 14, fontWeight: 600, color: "#9ca3af" }}>Interview Rules</span>}
       />
 
-      <div style={{ maxWidth: 560, margin: "0 auto", padding: "48px 32px" }}>
+      <div style={{ maxWidth: 560, margin: "0 auto", padding: isMobile ? "28px 18px" : "48px 32px", boxSizing: "border-box" }}>
         <div style={{ textAlign: "center", marginBottom: 32 }}>
           <div style={{ width: 56, height: 56, borderRadius: "50%", background: "rgba(99,102,241,0.15)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", fontSize: 24 }}>📋</div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, margin: "0 0 6px" }}>Before You Begin</h1>
+          <h1 style={{ fontSize: isMobile ? 19 : 22, fontWeight: 700, margin: "0 0 6px" }}>Before You Begin</h1>
           <p style={{ color: "#6b7280", fontSize: 14, margin: 0 }}>
             This is a monitored interview session. Please read and acknowledge the rules below.
           </p>
@@ -58,12 +60,12 @@ export default function InterviewRules() {
         <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 24 }}>
           {RULES.map(({ icon, title, desc, severity }) => (
             <div key={title} style={{
-              display: "flex", gap: 14, padding: "16px",
+              display: "flex", gap: isMobile ? 10 : 14, padding: isMobile ? "14px" : "16px",
               background: "#1f2937", border: `1px solid ${severity === "high" ? "rgba(99,102,241,0.3)" : "#374151"}`,
               borderRadius: 10, alignItems: "flex-start",
             }}>
               <span style={{ fontSize: 20, flexShrink: 0 }}>{icon}</span>
-              <div>
+              <div style={{ minWidth: 0 }}>
                 <p style={{ fontWeight: 600, fontSize: 14, margin: "0 0 3px" }}>{title}</p>
                 <p style={{ color: "#6b7280", fontSize: 13, margin: 0, lineHeight: 1.5 }}>{desc}</p>
               </div>
@@ -78,7 +80,7 @@ export default function InterviewRules() {
         </div>
 
         <label style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 20, cursor: "pointer" }}>
-          <input type="checkbox" checked={acknowledged} onChange={(e) => setAcknowledged(e.target.checked)} style={{ marginTop: 2, accentColor: "#6366f1" }} />
+          <input type="checkbox" checked={acknowledged} onChange={(e) => setAcknowledged(e.target.checked)} style={{ marginTop: 2, accentColor: "#6366f1", flexShrink: 0 }} />
           <span style={{ fontSize: 14, color: "#d1d5db", lineHeight: 1.5 }}>
             I have read and understood the interview rules. I agree to proceed under these conditions.
           </span>

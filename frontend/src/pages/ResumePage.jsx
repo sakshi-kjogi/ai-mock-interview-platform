@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -10,6 +9,7 @@ import Button from "../components/ui/Button";
 import Badge from "../components/ui/Badge";
 import { Input } from "../components/ui/Input";
 import { Skeleton } from "../components/ui/Skeleton";
+import useIsMobile from "../hooks/useIsMobile";
 
 const PRIORITY_VARIANT = { high: "danger", medium: "warning", low: "info" };
 const ACTION_STYLE = {
@@ -25,6 +25,7 @@ const INTERVIEW_TYPES = [
 
 export default function ResumePage() {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const fileRef  = useRef();
 
   const [resumes,   setResumes]   = useState([]);
@@ -90,16 +91,16 @@ export default function ResumePage() {
 
   return (
     <AppLayout>
-      <div className="page-enter" style={{ padding: "28px 32px" }}>
+      <div className="page-enter" style={{ padding: isMobile ? "20px 16px" : "28px 32px", boxSizing: "border-box" }}>
         {/* Header row */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 28 }}>
+        <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "flex-start" : "center", justifyContent: "space-between", gap: isMobile ? 14 : 0, marginBottom: 28 }}>
           <div>
-            <h1 style={{ fontSize: 20, fontWeight: 700, margin: "0 0 4px" }}>Resume</h1>
+            <h1 style={{ fontSize: isMobile ? 18 : 20, fontWeight: 700, margin: "0 0 4px" }}>Resume</h1>
             <p style={{ color: "#6b7280", fontSize: 13, margin: 0 }}>
               Upload your resume and get AI-tailored interview questions
             </p>
           </div>
-          <Button size="sm" loading={uploading} onClick={() => fileRef.current?.click()}>
+          <Button size="sm" loading={uploading} onClick={() => fileRef.current?.click()} fullWidth={isMobile}>
             {uploading ? "Uploading..." : "Upload PDF"}
           </Button>
           <input
@@ -120,29 +121,29 @@ export default function ResumePage() {
             <Skeleton height={220} style={{ borderRadius: 16 }} />
           </div>
         ) : resumes.length === 0 ? (
-          <div style={{ border: "2px dashed #374151", borderRadius: 16, padding: 60, textAlign: "center", maxWidth: 520 }}>
+          <div style={{ border: "2px dashed #374151", borderRadius: 16, padding: isMobile ? 32 : 60, textAlign: "center", maxWidth: 520 }}>
             <p style={{ fontSize: 48, marginBottom: 16 }}>📄</p>
             <p style={{ fontSize: 18, fontWeight: 600, margin: "0 0 8px" }}>No resume uploaded yet</p>
             <p style={{ color: "#6b7280", fontSize: 13, margin: "0 0 24px", lineHeight: 1.6 }}>
               Upload a PDF resume to get AI-powered improvement suggestions
               and tailored interview questions based on your actual experience.
             </p>
-            <Button size="lg" loading={uploading} onClick={() => fileRef.current?.click()}>
+            <Button size="lg" loading={uploading} onClick={() => fileRef.current?.click()} fullWidth={isMobile}>
               Upload Your Resume
             </Button>
           </div>
         ) : (
-          <div style={{ display: "flex", gap: 24, alignItems: "flex-start", maxWidth: 1000 }}>
+          <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: isMobile ? 16 : 24, alignItems: "flex-start", maxWidth: 1000 }}>
             {/* Left column */}
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 20 }}>
+            <div style={{ flex: 1, width: "100%", display: "flex", flexDirection: "column", gap: 20, minWidth: 0 }}>
 
               {/* Resume info card */}
-              <div style={{ background: "#1f2937", border: "1px solid #374151", borderRadius: 16, padding: 24 }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div style={{ background: "#1f2937", border: "1px solid #374151", borderRadius: 16, padding: isMobile ? 16 : 24 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20, gap: 10 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
                     <div style={{ width: 44, height: 44, borderRadius: 10, background: "rgba(99,102,241,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>📄</div>
-                    <div>
-                      <p style={{ fontWeight: 600, fontSize: 15, margin: 0 }}>
+                    <div style={{ minWidth: 0 }}>
+                      <p style={{ fontWeight: 600, fontSize: 15, margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {selected.file_url.split(":")[1] || "Resume"}
                       </p>
                       <p style={{ color: "#6b7280", fontSize: 12, margin: "2px 0 0" }}>
@@ -150,7 +151,7 @@ export default function ResumePage() {
                       </p>
                     </div>
                   </div>
-                  <Badge variant="success">Parsed ✓</Badge>
+                  <Badge variant="success" style={{ flexShrink: 0 }}>Parsed ✓</Badge>
                 </div>
 
                 {(skills.technical?.length > 0 || skills.soft?.length > 0) ? (
@@ -176,8 +177,8 @@ export default function ResumePage() {
               </div>
 
               {/* Analysis */}
-              <div style={{ background: "#1f2937", border: "1px solid #374151", borderRadius: 16, padding: 24 }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: feedback.length > 0 ? 16 : 0 }}>
+              <div style={{ background: "#1f2937", border: "1px solid #374151", borderRadius: 16, padding: isMobile ? 16 : 24 }}>
+                <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "flex-start" : "center", justifyContent: "space-between", gap: isMobile ? 12 : 0, marginBottom: feedback.length > 0 ? 16 : 0 }}>
                   <div>
                     <h2 style={{ fontSize: 15, fontWeight: 600, margin: "0 0 3px" }}>Resume Improvement Suggestions</h2>
                     {feedback.length === 0 && (
@@ -187,6 +188,7 @@ export default function ResumePage() {
                   <Button
                     variant={feedback.length > 0 ? "secondary" : "primary"}
                     size="sm" loading={analyzing} onClick={handleAnalyze}
+                    fullWidth={isMobile}
                   >
                     {analyzing ? "Analysing..." : feedback.length > 0 ? "↺ Re-analyse" : "✨ Analyse"}
                   </Button>
@@ -201,7 +203,7 @@ export default function ResumePage() {
                           <div style={{ width: 28, height: 28, borderRadius: 6, background: `${a.color}20`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: a.color, flexShrink: 0 }}>
                             {a.icon}
                           </div>
-                          <div style={{ flex: 1 }}>
+                          <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ display: "flex", gap: 6, marginBottom: 6, flexWrap: "wrap" }}>
                               <Badge variant="info" style={{ fontSize: 10 }}>{f.category}</Badge>
                               <Badge variant={PRIORITY_VARIANT[f.priority] || "info"} style={{ fontSize: 10 }}>{f.priority} priority</Badge>
@@ -217,8 +219,8 @@ export default function ResumePage() {
             </div>
 
             {/* Right column — Start Interview */}
-            <div style={{ width: 320, flexShrink: 0 }}>
-              <div style={{ background: "#1f2937", border: "1px solid #374151", borderRadius: 16, padding: 24, position: "sticky", top: 28 }}>
+            <div style={{ width: isMobile ? "100%" : 320, flexShrink: 0 }}>
+              <div style={{ background: "#1f2937", border: "1px solid #374151", borderRadius: 16, padding: isMobile ? 16 : 24, position: isMobile ? "static" : "sticky", top: 28 }}>
                 <h2 style={{ fontSize: 15, fontWeight: 600, margin: "0 0 4px" }}>Start Resume Interview</h2>
                 <p style={{ color: "#6b7280", fontSize: 13, margin: "0 0 20px", lineHeight: 1.5 }}>
                   Questions tailored to your resume content and experience.
