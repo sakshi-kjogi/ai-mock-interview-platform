@@ -8,6 +8,7 @@ import AppLayout from "../components/AppLayout";
 import Button from "../components/ui/Button";
 import Badge from "../components/ui/Badge";
 import { SkeletonStatCard, SkeletonCard } from "../components/ui/Skeleton";
+import useIsMobile from "../hooks/useIsMobile";
 
 const TYPE_LABELS   = { technical: "Technical", behavioral: "Behavioral", system_design: "System Design" };
 const TYPE_ICONS    = { technical: "💻", behavioral: "🤝", system_design: "🏗️" };
@@ -22,7 +23,7 @@ const fmtTime = (s) => {
 
 function StatCard({ label, value, sub, icon, trend }) {
   return (
-    <div style={{ background: "#1f2937", border: "1px solid #374151", borderRadius: 14, padding: 20, flex: 1 }}>
+    <div style={{ background: "#1f2937", border: "1px solid #374151", borderRadius: 14, padding: 20, minWidth: 0 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
         <p style={{ color: "#6b7280", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", margin: 0 }}>{label}</p>
         <span style={{ fontSize: 18 }}>{icon}</span>
@@ -47,6 +48,7 @@ function ChartTooltip({ active, payload, label }) {
 export default function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [sessions,  setSessions]  = useState([]);
   const [analytics, setAnalytics] = useState(null);
   const [loading,   setLoading]   = useState(true);
@@ -66,23 +68,23 @@ export default function Dashboard() {
 
   return (
     <AppLayout>
-      <div className="page-enter" style={{ padding: "28px 32px" }}>
+      <div className="page-enter" style={{ padding: isMobile ? "20px 16px" : "28px 32px", maxWidth: "100%", boxSizing: "border-box" }}>
         {/* Top bar */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 28 }}>
+        <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "flex-start" : "center", justifyContent: "space-between", gap: isMobile ? 14 : 0, marginBottom: 28 }}>
           <div>
-            <h1 style={{ fontSize: 20, fontWeight: 700, margin: "0 0 2px" }}>{greeting}, {user?.full_name?.split(" ")[0]} 👋</h1>
+            <h1 style={{ fontSize: isMobile ? 18 : 20, fontWeight: 700, margin: "0 0 2px" }}>{greeting}, {user?.full_name?.split(" ")[0]} 👋</h1>
             <p style={{ color: "#6b7280", fontSize: 13, margin: 0 }}>Ready for your next interview?</p>
           </div>
-          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-            <button style={{ background: "none", border: "none", cursor: "pointer", color: "#6b7280", padding: 8, borderRadius: 8 }}>
+          <div style={{ display: "flex", gap: 10, alignItems: "center", width: isMobile ? "100%" : "auto" }}>
+            <button style={{ background: "none", border: "none", cursor: "pointer", color: "#6b7280", padding: 8, borderRadius: 8, flexShrink: 0 }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
             </button>
-            <Button onClick={() => navigate("/interview/setup")}>+ New Interview</Button>
+            <Button onClick={() => navigate("/interview/setup")} fullWidth={isMobile}>+ New Interview</Button>
           </div>
         </div>
 
         {/* Stat Cards */}
-        <div style={{ display: "flex", gap: 16, marginBottom: 24 }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, 1fr)", gap: isMobile ? 12 : 16, marginBottom: 24 }}>
           {loading ? Array.from({ length: 4 }).map((_, i) => <SkeletonStatCard key={i} />) : [
             { label: "Total Interviews", value: analytics?.total_sessions ?? 0, sub: `${analytics?.completed_sessions ?? 0} completed`, icon: "🎯", trend: "+12% this month" },
             { label: "Average Score", value: analytics?.overall_avg_score ? `${analytics.overall_avg_score}%` : "—", sub: "across all sessions", icon: "⭐", trend: "+5% this month" },
@@ -93,13 +95,13 @@ export default function Dashboard() {
 
         {/* Charts */}
         {loading ? (
-          <div style={{ display: "flex", gap: 20, marginBottom: 24 }}>
+          <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: 20, marginBottom: 24 }}>
             <SkeletonCard lines={4} /><SkeletonCard lines={4} />
           </div>
         ) : trendData.length > 0 || categoryData.length > 0 ? (
-          <div style={{ display: "flex", gap: 20, marginBottom: 24 }}>
+          <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: 20, marginBottom: 24 }}>
             {trendData.length > 0 && (
-              <div style={{ flex: 2, background: "#1f2937", border: "1px solid #374151", borderRadius: 14, padding: 20 }}>
+              <div style={{ flex: isMobile ? "none" : 2, background: "#1f2937", border: "1px solid #374151", borderRadius: 14, padding: isMobile ? 16 : 20, minWidth: 0 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 20 }}>
                   <div>
                     <p style={{ fontWeight: 600, fontSize: 14, margin: "0 0 2px" }}>Performance Overview</p>
@@ -118,7 +120,7 @@ export default function Dashboard() {
               </div>
             )}
             {categoryData.length > 0 && (
-              <div style={{ flex: 1, background: "#1f2937", border: "1px solid #374151", borderRadius: 14, padding: 20 }}>
+              <div style={{ flex: isMobile ? "none" : 1, background: "#1f2937", border: "1px solid #374151", borderRadius: 14, padding: isMobile ? 16 : 20, minWidth: 0 }}>
                 <p style={{ fontWeight: 600, fontSize: 14, margin: "0 0 20px" }}>Skill Breakdown</p>
                 <ResponsiveContainer width="100%" height={180}>
                   <BarChart data={categoryData} layout="vertical" margin={{ left: 8 }}>
@@ -149,7 +151,7 @@ export default function Dashboard() {
             {Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} lines={1} />)}
           </div>
         ) : sessions.length === 0 ? (
-          <div style={{ border: "1px dashed #374151", borderRadius: 14, padding: 40, textAlign: "center" }}>
+          <div style={{ border: "1px dashed #374151", borderRadius: 14, padding: isMobile ? 24 : 40, textAlign: "center" }}>
             <p style={{ fontSize: 16, fontWeight: 600, margin: "0 0 6px" }}>No interviews yet</p>
             <p style={{ color: "#6b7280", fontSize: 13, margin: "0 0 20px" }}>Start your first mock interview to track your progress.</p>
             <Button onClick={() => navigate("/interview/setup")}>Start First Interview</Button>
@@ -158,14 +160,14 @@ export default function Dashboard() {
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {sessions.slice(0, 8).map((s) => (
               <div key={s.id} onClick={() => navigate(`/interview/${s.id}`)}
-                style={{ background: "#1f2937", border: "1px solid #374151", borderRadius: 12, padding: "14px 18px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", transition: "all 0.15s" }}
+                style={{ background: "#1f2937", border: "1px solid #374151", borderRadius: 12, padding: isMobile ? "12px 14px" : "14px 18px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", transition: "all 0.15s", gap: 10 }}
                 onMouseEnter={e => { e.currentTarget.style.borderColor = "#6366f1"; e.currentTarget.style.background = "#1e2d3d"; }}
                 onMouseLeave={e => { e.currentTarget.style.borderColor = "#374151"; e.currentTarget.style.background = "#1f2937"; }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <span style={{ fontSize: 18 }}>{TYPE_ICONS[s.interview_type] || "🎯"}</span>
-                  <div>
-                    <p style={{ fontWeight: 600, fontSize: 14, margin: 0 }}>{s.role_title}</p>
-                    <p style={{ color: "#6b7280", fontSize: 12, margin: "2px 0 0" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
+                  <span style={{ fontSize: 18, flexShrink: 0 }}>{TYPE_ICONS[s.interview_type] || "🎯"}</span>
+                  <div style={{ minWidth: 0 }}>
+                    <p style={{ fontWeight: 600, fontSize: 14, margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.role_title}</p>
+                    <p style={{ color: "#6b7280", fontSize: 12, margin: "2px 0 0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {TYPE_LABELS[s.interview_type]} · {new Date(s.created_at).toLocaleDateString()}
                     </p>
                   </div>
