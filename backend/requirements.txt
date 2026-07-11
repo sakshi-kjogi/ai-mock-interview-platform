@@ -7,6 +7,7 @@ pydantic[email]
 alembic
 python-dotenv
 python-jose[cryptography]
+python-multipart
 bcrypt
 google-genai
 pypdf
