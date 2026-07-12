@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getInterview } from "../api/interviews";
@@ -9,6 +8,7 @@ import AppLayout from "../components/AppLayout";
 import Button from "../components/ui/Button";
 import Badge from "../components/ui/Badge";
 import { Skeleton } from "../components/ui/Skeleton";
+import useIsMobile from "../hooks/useIsMobile";
 
 const TYPE_LABELS = {
   technical: "Technical", behavioral: "Behavioral", system_design: "System Design",
@@ -33,6 +33,7 @@ const fmtTime = (s) => {
 export default function InterviewComplete() {
   const { sessionId } = useParams();
   const navigate      = useNavigate();
+  const isMobile      = useIsMobile();
 
   const [session,   setSession]   = useState(null);
   const [questions, setQuestions] = useState([]);
@@ -60,7 +61,7 @@ export default function InterviewComplete() {
 
   if (loading) return (
     <AppLayout>
-      <div style={{ padding: "28px 32px", maxWidth: 760, display: "flex", flexDirection: "column", gap: 16 }}>
+      <div style={{ padding: isMobile ? "20px 16px" : "28px 32px", maxWidth: 760, display: "flex", flexDirection: "column", gap: 16, boxSizing: "border-box" }}>
         <Skeleton height={24} width="50%" />
         <Skeleton height={100} style={{ borderRadius: 14 }} />
         {Array.from({ length: 3 }).map((_, i) => (
@@ -72,11 +73,11 @@ export default function InterviewComplete() {
 
   return (
     <AppLayout>
-      <div className="page-enter" style={{ padding: "28px 32px" }}>
+      <div className="page-enter" style={{ padding: isMobile ? "20px 16px" : "28px 32px", boxSizing: "border-box" }}>
         {/* Page header */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
+        <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "flex-start" : "center", justifyContent: "space-between", gap: isMobile ? 10 : 0, marginBottom: 24 }}>
           <div>
-            <h1 style={{ fontSize: 20, fontWeight: 700, margin: "0 0 4px" }}>
+            <h1 style={{ fontSize: isMobile ? 18 : 20, fontWeight: 700, margin: "0 0 4px" }}>
               {isTerminated ? "Interview Terminated" : "Interview Complete"}
             </h1>
             <p style={{ color: "#6b7280", fontSize: 13, margin: 0 }}>
@@ -100,15 +101,15 @@ export default function InterviewComplete() {
           )}
 
           {/* Summary card */}
-          <div style={{ background: "#1f2937", border: "1px solid #374151", borderRadius: 14, padding: 22, marginBottom: 20, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <div>
+          <div style={{ background: "#1f2937", border: "1px solid #374151", borderRadius: 14, padding: isMobile ? 16 : 22, marginBottom: 20, display: "flex", flexDirection: isMobile ? "column" : "row", gap: isMobile ? 14 : 0, justifyContent: "space-between", alignItems: isMobile ? "flex-start" : "center" }}>
+            <div style={{ minWidth: 0 }}>
               <h2 style={{ fontSize: 18, fontWeight: 700, margin: "0 0 6px" }}>{session?.role_title}</h2>
               <p style={{ color: "#6b7280", fontSize: 13, margin: 0 }}>
                 {TYPE_LABELS[session?.interview_type]} · {questions.length} questions ·{" "}
                 {new Date(session?.created_at).toLocaleDateString()}
               </p>
             </div>
-            <div style={{ textAlign: "right" }}>
+            <div style={{ textAlign: isMobile ? "left" : "right" }}>
               <p style={{ color: "#6b7280", fontSize: 12, margin: "0 0 2px" }}>Total time</p>
               <p style={{ fontFamily: "monospace", fontSize: 18, fontWeight: 700, margin: 0 }}>
                 {fmtTime(totalTime)}
@@ -118,8 +119,8 @@ export default function InterviewComplete() {
 
           {/* Integrity Report */}
           {integrity && (
-            <div style={{ background: "#1f2937", border: "1px solid #374151", borderRadius: 14, padding: 20, marginBottom: 20 }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+            <div style={{ background: "#1f2937", border: "1px solid #374151", borderRadius: 14, padding: isMobile ? 16 : 20, marginBottom: 20 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, gap: 10 }}>
                 <h2 style={{ fontSize: 14, fontWeight: 600, margin: 0 }}>🛡️ Integrity Report</h2>
                 <Badge variant={integrity.status === "passed" ? "success" : "danger"}>
                   {integrity.status === "passed" ? "Passed" : "Violations Detected"}
@@ -152,8 +153,8 @@ export default function InterviewComplete() {
               return (
                 <div key={q.id} style={{ background: "#1f2937", border: "1px solid #374151", borderRadius: 12, overflow: "hidden" }}>
                   {/* Question row */}
-                  <div style={{ padding: "14px 18px 10px", display: "flex", justifyContent: "space-between", gap: 12 }}>
-                    <div style={{ flex: 1 }}>
+                  <div style={{ padding: isMobile ? "12px 14px 8px" : "14px 18px 10px", display: "flex", justifyContent: "space-between", gap: 12 }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
                       <span style={{ color: "#6366f1", fontWeight: 700, fontSize: 12, marginRight: 8 }}>
                         Q{i + 1}.
                       </span>
@@ -169,7 +170,7 @@ export default function InterviewComplete() {
                   </div>
 
                   {/* Answer row */}
-                  <div style={{ borderTop: "1px solid #374151", padding: "10px 18px" }}>
+                  <div style={{ borderTop: "1px solid #374151", padding: isMobile ? "10px 14px" : "10px 18px" }}>
                     <p style={{ color: "#6b7280", fontSize: 11, margin: "0 0 4px", textTransform: "uppercase", letterSpacing: "0.04em" }}>
                       Your answer
                     </p>
@@ -189,11 +190,11 @@ export default function InterviewComplete() {
           </div>
 
           {/* CTA */}
-          <div style={{ display: "flex", gap: 12 }}>
-            <Button variant="secondary" onClick={() => navigate("/dashboard")}>
+          <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: 12 }}>
+            <Button variant="secondary" onClick={() => navigate("/dashboard")} fullWidth={isMobile}>
               Back to Dashboard
             </Button>
-            <Button onClick={() => navigate(`/interview/${sessionId}/feedback`)}>
+            <Button onClick={() => navigate(`/interview/${sessionId}/feedback`)} fullWidth={isMobile}>
               Get AI Feedback →
             </Button>
           </div>
