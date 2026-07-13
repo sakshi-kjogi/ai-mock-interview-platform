@@ -5,7 +5,7 @@ from slowapi.errors import RateLimitExceeded
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 
-from app.api.v1 import analytics, answers, auth, feedback, interviews, questions, resumes, violations
+from app.api.v1 import analytics, answers, auth, feedback, interviews, notifications, questions, resumes, violations
 from app.core.config import settings
 from app.core.rate_limit import limiter
 
@@ -46,14 +46,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(auth.router,       prefix="/api/v1")
-app.include_router(interviews.router, prefix="/api/v1")
-app.include_router(questions.router,  prefix="/api/v1")
-app.include_router(answers.router,    prefix="/api/v1")
-app.include_router(feedback.router,   prefix="/api/v1")
-app.include_router(analytics.router,  prefix="/api/v1")
-app.include_router(resumes.router,    prefix="/api/v1")
-app.include_router(violations.router, prefix="/api/v1")
+app.include_router(auth.router,          prefix="/api/v1")
+app.include_router(interviews.router,    prefix="/api/v1")
+app.include_router(questions.router,     prefix="/api/v1")
+app.include_router(answers.router,       prefix="/api/v1")
+app.include_router(feedback.router,      prefix="/api/v1")
+app.include_router(analytics.router,     prefix="/api/v1")
+app.include_router(resumes.router,       prefix="/api/v1")
+app.include_router(violations.router,    prefix="/api/v1")
+app.include_router(notifications.router, prefix="/api/v1")
 
 
 @app.get("/health")

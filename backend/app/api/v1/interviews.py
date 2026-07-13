@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_current_user
 from app.db.session import get_db
 from app.models.user import User
+from app.models.interview_session import SessionStatus
 from app.schemas.interview_session import (
     InterviewSessionCreate,
     InterviewSessionResponse,
@@ -17,6 +18,7 @@ from app.services.interview_service import (
     get_user_sessions,
     update_session_status,
 )
+from app.services import notification_service
 
 router = APIRouter(prefix="/interviews", tags=["Interviews"])
 
@@ -54,7 +56,7 @@ def get_interview(
 
 
 @router.patch("/{session_id}/status", response_model=InterviewSessionResponse)
-def update_interview_status(
+async def update_interview_status(
     session_id: uuid.UUID,
     data: InterviewSessionUpdate,
     db: Session = Depends(get_db),
@@ -66,4 +68,15 @@ def update_interview_status(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Interview session not found",
         )
-    return update_session_status(db, session, data)
+    updated = update_session_status(db, session, data)
+
+    if updated.status == SessionStatus.completed:
+        await notification_service.create_notification(
+            db,
+            current_user.id,
+            type="interview_completed",
+            title="Interview completed",
+            description=f"Your {updated.role_title} interview has been evaluated. Check your feedback now.",
+        )
+
+    return updated

@@ -9,7 +9,7 @@ from app.models.interview_session import InterviewType
 from app.models.user import User
 from app.schemas.interview_session import InterviewSessionCreate
 from app.schemas.resume import ResumeInterviewRequest, ResumeFeedbackResponse, ResumeResponse
-from app.services import resume_service
+from app.services import resume_service, notification_service
 from app.services.interview_service import create_session
 
 router = APIRouter(prefix="/resumes", tags=["Resumes"])
@@ -29,9 +29,19 @@ async def upload_resume(
         raise HTTPException(status_code=400, detail="File too large. Maximum size is 5 MB")
 
     try:
-        return resume_service.upload_and_parse(db, current_user.id, file.filename, contents)
+        resume = resume_service.upload_and_parse(db, current_user.id, file.filename, contents)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to parse PDF: {e}")
+
+    await notification_service.create_notification(
+        db,
+        current_user.id,
+        type="resume_parsed",
+        title="Resume parsed successfully",
+        description="Your resume has been parsed and is ready for tailored interviews.",
+    )
+
+    return resume
 
 
 @router.get("/", response_model=list[ResumeResponse])
