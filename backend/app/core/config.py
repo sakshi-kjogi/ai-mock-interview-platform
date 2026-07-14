@@ -16,8 +16,13 @@ class Settings(BaseSettings):
 
     # Password reset email (Resend)
     RESEND_API_KEY: str = ""
-    RESEND_FROM_EMAIL: str = "onboarding@resend.dev"  # Resend's shared test sender — works without domain verification
-    FRONTEND_URL: str = "http://localhost:5173"  # used to build the reset-password link sent via email
+    RESEND_FROM_EMAIL: str = "onboarding@resend.dev"
+    FRONTEND_URL: str = "http://localhost:5173"
+
+    # Google OAuth
+    GOOGLE_CLIENT_ID: str = ""
+    GOOGLE_CLIENT_SECRET: str = ""
+    GOOGLE_REDIRECT_URI: str = "http://localhost:8000/api/v1/auth/google/callback"
 
     @field_validator("DATABASE_URL")
     @classmethod

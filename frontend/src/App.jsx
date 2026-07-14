@@ -8,6 +8,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import OAuthCallback from "./pages/OAuthCallback";
 import Dashboard from "./pages/Dashboard";
 import ProfilePage from "./pages/ProfilePage";
 import InterviewSetup from "./pages/InterviewSetup";
@@ -57,6 +58,7 @@ export default function App() {
           <Route path="/register"       element={<Register />} />
           <Route path="/forgot-password"element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/oauth/callback" element={<OAuthCallback />} />
 
           {/* Protected — with sidebar (AppLayout inside each page) */}
           <Route path="/dashboard"     element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />

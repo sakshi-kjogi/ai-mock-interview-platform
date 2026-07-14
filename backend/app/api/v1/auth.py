@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
@@ -6,12 +7,13 @@ from app.core.config import settings
 from app.core.rate_limit import limiter
 from app.core.security import create_access_token, hash_password, verify_password
 from app.core.email import send_password_reset_email
+from app.core.oauth import build_google_authorize_url, exchange_google_code, generate_state
 from app.db.session import get_db
 from app.models.user import User
 from app.schemas.token import Token
 from app.schemas.user import PasswordChangeRequest, UserCreate, UserLogin, UserResponse
 from app.schemas.password_reset import ForgotPasswordRequest, ResetPasswordRequest
-from app.services.user_service import create_user, get_user_by_email
+from app.services.user_service import create_user, get_user_by_email, find_or_create_oauth_user
 from app.services import password_reset_service
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -36,8 +38,10 @@ def register(request: Request, data: UserCreate, db: Session = Depends(get_db)):
 @limiter.limit("10/minute")
 def login(request: Request, credentials: UserLogin, db: Session = Depends(get_db)):
     user = get_user_by_email(db, credentials.email)
-    if not user or not verify_password(credentials.password, user.hashed_password):
+    if not user or not user.hashed_password or not verify_password(credentials.password, user.hashed_password):
         # Same message for both cases — prevents email enumeration.
+        # Also covers OAuth-only accounts (hashed_password is None) so they
+        # get a clear "invalid credentials" rather than a server error.
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password",
@@ -59,6 +63,11 @@ def change_password(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    if not current_user.hashed_password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This account signed up via Google and has no password set. There's nothing to change.",
+        )
     if not verify_password(data.current_password, current_user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -78,10 +87,6 @@ def change_password(
 @limiter.limit("3/minute")
 def forgot_password(request: Request, data: ForgotPasswordRequest, db: Session = Depends(get_db)):
     user = get_user_by_email(db, data.email)
-
-    # Always return the same generic message whether or not the user exists —
-    # this prevents attackers from using this endpoint to discover which
-    # emails are registered (email enumeration).
     generic_response = {"message": "If an account with that email exists, a reset link has been sent."}
 
     if not user:
@@ -93,7 +98,6 @@ def forgot_password(request: Request, data: ForgotPasswordRequest, db: Session =
     try:
         send_password_reset_email(user.email, reset_link)
     except Exception:
-        # Don't leak email-sending failures to the client — log server-side only.
         pass
 
     return generic_response
@@ -110,3 +114,54 @@ def reset_password(request: Request, data: ResetPasswordRequest, db: Session = D
         )
     password_reset_service.consume_token_and_reset_password(db, token, data.new_password)
     return {"message": "Password has been reset successfully. You can now log in."}
+
+
+@router.get("/google/login")
+def google_login(response: Response):
+    state = generate_state()
+    authorize_url = build_google_authorize_url(state)
+
+    redirect = RedirectResponse(url=authorize_url)
+    # httpOnly + short-lived cookie to verify the callback isn't a CSRF forgery.
+    # SameSite="lax" is required here since this cookie must survive the
+    # cross-site redirect back from accounts.google.com.
+    redirect.set_cookie(
+        key="oauth_state",
+        value=state,
+        httponly=True,
+        max_age=300,
+        samesite="lax",
+        secure=settings.ENVIRONMENT != "development",
+    )
+    return redirect
+
+
+@router.get("/google/callback")
+async def google_callback(
+    code: str,
+    state: str,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    cookie_state = request.cookies.get("oauth_state")
+    if not cookie_state or cookie_state != state:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid OAuth state")
+
+    try:
+        profile = await exchange_google_code(code)
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Google authentication failed")
+
+    email = profile.get("email")
+    name = profile.get("name") or email.split("@")[0]
+    google_id = profile.get("id")
+
+    if not email or not google_id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Google did not return the expected profile data")
+
+    user = find_or_create_oauth_user(db, "google", google_id, email, name)
+    token = create_access_token(data={"sub": str(user.id)})
+
+    redirect = RedirectResponse(url=f"{settings.FRONTEND_URL}/oauth/callback?token={token}")
+    redirect.delete_cookie("oauth_state")
+    return redirect

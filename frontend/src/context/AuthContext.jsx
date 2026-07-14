@@ -24,13 +24,22 @@ export function AuthProvider({ children }) {
     setUser(me.data);
   };
 
+  // Used by the OAuth callback page — the backend already issued a valid
+  // JWT and handed it to us via the redirect URL, so we just need to store
+  // it and fetch the user, skipping the email/password exchange.
+  const loginWithToken = async (token) => {
+    localStorage.setItem("token", token);
+    const me = await api.get("/api/v1/auth/me");
+    setUser(me.data);
+  };
+
   const logout = () => {
     localStorage.removeItem("token");
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, loginWithToken, logout }}>
       {children}
     </AuthContext.Provider>
   );

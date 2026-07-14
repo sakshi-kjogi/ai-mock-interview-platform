@@ -126,7 +126,13 @@ export default function Login() {
 
           <div style={{ display: "flex", gap: 10, marginBottom: 24 }}>
             {[["Google", <GoogleIcon />], ["GitHub", <GitHubIcon />]].map(([label, icon]) => (
-              <button key={label} onClick={() => alert(`${label} OAuth requires backend configuration. Planned for next release.`)}
+              <button key={label} onClick={() => {
+                if (label === "Google") {
+                  window.location.href = `${import.meta.env.VITE_API_URL}/api/v1/auth/google/login`;
+                } else {
+                  alert(`${label} OAuth requires backend configuration. Planned for next release.`);
+                }
+              }}
                 style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "10px 0", background: "#0f172a", border: "1px solid #1e293b", borderRadius: 8, color: "#94a3b8", fontSize: 14, cursor: "pointer", transition: "all 0.15s" }}
                 onMouseEnter={e => { e.currentTarget.style.borderColor = "#334155"; e.currentTarget.style.color = "#f8fafc"; }}
                 onMouseLeave={e => { e.currentTarget.style.borderColor = "#1e293b"; e.currentTarget.style.color = "#94a3b8"; }}>
