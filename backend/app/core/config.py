@@ -24,6 +24,12 @@ class Settings(BaseSettings):
     GOOGLE_CLIENT_SECRET: str = ""
     GOOGLE_REDIRECT_URI: str = "http://localhost:8000/api/v1/auth/google/callback"
 
+    # GitHub OAuth (production-only for now — GitHub OAuth Apps only support
+    # a single callback URL, so this isn't configured for local dev testing)
+    GITHUB_CLIENT_ID: str = ""
+    GITHUB_CLIENT_SECRET: str = ""
+    GITHUB_REDIRECT_URI: str = ""
+
     @field_validator("DATABASE_URL")
     @classmethod
     def fix_postgres_scheme(cls, v: str) -> str:

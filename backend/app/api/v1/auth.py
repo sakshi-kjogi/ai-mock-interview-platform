@@ -7,7 +7,13 @@ from app.core.config import settings
 from app.core.rate_limit import limiter
 from app.core.security import create_access_token, hash_password, verify_password
 from app.core.email import send_password_reset_email
-from app.core.oauth import build_google_authorize_url, exchange_google_code, generate_state
+from app.core.oauth import (
+    build_google_authorize_url,
+    exchange_google_code,
+    build_github_authorize_url,
+    exchange_github_code,
+    generate_state,
+)
 from app.db.session import get_db
 from app.models.user import User
 from app.schemas.token import Token
@@ -39,9 +45,6 @@ def register(request: Request, data: UserCreate, db: Session = Depends(get_db)):
 def login(request: Request, credentials: UserLogin, db: Session = Depends(get_db)):
     user = get_user_by_email(db, credentials.email)
     if not user or not user.hashed_password or not verify_password(credentials.password, user.hashed_password):
-        # Same message for both cases — prevents email enumeration.
-        # Also covers OAuth-only accounts (hashed_password is None) so they
-        # get a clear "invalid credentials" rather than a server error.
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password",
@@ -66,7 +69,7 @@ def change_password(
     if not current_user.hashed_password:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="This account signed up via Google and has no password set. There's nothing to change.",
+            detail="This account signed up via OAuth and has no password set. There's nothing to change.",
         )
     if not verify_password(data.current_password, current_user.hashed_password):
         raise HTTPException(
@@ -80,7 +83,6 @@ def change_password(
         )
     current_user.hashed_password = hash_password(data.new_password)
     db.commit()
-    # Returns 204 No Content on success — no body needed.
 
 
 @router.post("/forgot-password", status_code=status.HTTP_200_OK)
@@ -122,9 +124,6 @@ def google_login(response: Response):
     authorize_url = build_google_authorize_url(state)
 
     redirect = RedirectResponse(url=authorize_url)
-    # httpOnly + short-lived cookie to verify the callback isn't a CSRF forgery.
-    # SameSite="lax" is required here since this cookie must survive the
-    # cross-site redirect back from accounts.google.com.
     redirect.set_cookie(
         key="oauth_state",
         value=state,
@@ -153,13 +152,64 @@ async def google_callback(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Google authentication failed")
 
     email = profile.get("email")
-    name = profile.get("name") or email.split("@")[0]
+    name = profile.get("name") or (email.split("@")[0] if email else "Google User")
     google_id = profile.get("id")
 
     if not email or not google_id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Google did not return the expected profile data")
 
     user = find_or_create_oauth_user(db, "google", google_id, email, name)
+    token = create_access_token(data={"sub": str(user.id)})
+
+    redirect = RedirectResponse(url=f"{settings.FRONTEND_URL}/oauth/callback?token={token}")
+    redirect.delete_cookie("oauth_state")
+    return redirect
+
+
+@router.get("/github/login")
+def github_login(response: Response):
+    state = generate_state()
+    authorize_url = build_github_authorize_url(state)
+
+    redirect = RedirectResponse(url=authorize_url)
+    redirect.set_cookie(
+        key="oauth_state",
+        value=state,
+        httponly=True,
+        max_age=300,
+        samesite="lax",
+        secure=settings.ENVIRONMENT != "development",
+    )
+    return redirect
+
+
+@router.get("/github/callback")
+async def github_callback(
+    code: str,
+    state: str,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    cookie_state = request.cookies.get("oauth_state")
+    if not cookie_state or cookie_state != state:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid OAuth state")
+
+    try:
+        profile = await exchange_github_code(code)
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="GitHub authentication failed")
+
+    email = profile.get("email")
+    github_id = profile.get("id")
+    name = profile.get("name") or "GitHub User"
+
+    if not email or not github_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="GitHub did not return a verified email address. Please make sure your GitHub account has a verified, non-private primary email.",
+        )
+
+    user = find_or_create_oauth_user(db, "github", github_id, email, name)
     token = create_access_token(data={"sub": str(user.id)})
 
     redirect = RedirectResponse(url=f"{settings.FRONTEND_URL}/oauth/callback?token={token}")
