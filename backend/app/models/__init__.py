@@ -7,6 +7,7 @@ from app.models.resume import Resume
 from app.models.resume_feedback import ResumeFeedback, ActionType, Priority
 from app.models.session_violation import SessionViolation, ViolationType
 from app.models.notification import Notification
+from app.models.password_reset_token import PasswordResetToken
 
 __all__ = [
     "User",
@@ -23,4 +24,5 @@ __all__ = [
     "SessionViolation",
     "ViolationType",
     "Notification",
+    "PasswordResetToken",
 ]
