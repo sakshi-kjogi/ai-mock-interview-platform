@@ -8,11 +8,11 @@ const NAV = [
     icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>,
   },
   {
-    label: "Interviews", path: "/dashboard",
+    label: "Interviews", path: "/interviews",
     icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>,
   },
   {
-    label: "Analytics", path: "/dashboard",
+    label: "Analytics", path: "/analytics",
     icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>,
   },
   {
@@ -20,11 +20,11 @@ const NAV = [
     icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>,
   },
   {
-    label: "Practice", path: "/dashboard",
+    label: "Practice", path: "/practice",
     icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>,
   },
   {
-    label: "Bookmarks", path: "/dashboard",
+    label: "Bookmarks", path: "/bookmarks",
     icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>,
   },
   {
@@ -50,7 +50,6 @@ export default function Sidebar({ isOpen = true, onClose = () => {} }) {
 
   return (
     <>
-      {/* Backdrop - mobile only, shown when drawer is open */}
       {isMobile && isOpen && (
         <div
           onClick={onClose}
@@ -71,12 +70,15 @@ export default function Sidebar({ isOpen = true, onClose = () => {} }) {
       }}>
         {/* Logo */}
         <div style={{ padding: "20px 20px 16px", borderBottom: "1px solid #1e293b", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }} onClick={() => handleNav("/dashboard")}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", minWidth: 0 }} onClick={() => handleNav("/dashboard")}>
             <div style={{ width: 32, height: 32, borderRadius: 8, background: "linear-gradient(135deg,#6366f1,#8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>🎯</div>
-            <span style={{ fontSize: 15, fontWeight: 700, color: "#f8fafc", letterSpacing: "-0.02em" }}>InterviewAI</span>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "#f8fafc", letterSpacing: "-0.02em", whiteSpace: "nowrap" }}>InterviewIQ</div>
+              <div style={{ fontSize: 9.5, color: "#64748b", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Practice. Improve. Get Hired.</div>
+            </div>
           </div>
           {isMobile && (
-            <button onClick={onClose} style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", padding: 4 }}>
+            <button onClick={onClose} style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", padding: 4, flexShrink: 0 }}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
                 <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
               </svg>
@@ -87,7 +89,7 @@ export default function Sidebar({ isOpen = true, onClose = () => {} }) {
         {/* Nav */}
         <nav style={{ flex: 1, padding: "12px 10px", overflowY: "auto", display: "flex", flexDirection: "column", gap: 2 }}>
           {NAV.map(({ label, path, icon }) => {
-            const isActive = pathname === path || (path === "/dashboard" && ["Dashboard","Interviews","Analytics","Practice","Bookmarks"].includes(label) && pathname === "/dashboard");
+            const isActive = pathname === path || pathname.startsWith(path + "/");
 
             return (
               <button key={label} onClick={() => handleNav(path)}

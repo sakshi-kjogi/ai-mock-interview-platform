@@ -20,6 +20,7 @@ router = APIRouter(tags=["Questions"])
 )
 def generate_questions(
     session_id: uuid.UUID,
+    num_questions: int = 5,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -28,7 +29,7 @@ def generate_questions(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
 
     try:
-        return generate_and_save_questions(db, session)
+        return generate_and_save_questions(db, session, num_questions=num_questions)
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,

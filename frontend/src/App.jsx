@@ -10,6 +10,10 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import OAuthCallback from "./pages/OAuthCallback";
 import Dashboard from "./pages/Dashboard";
+import InterviewsPage from "./pages/InterviewsPage";
+import AnalyticsPage from "./pages/AnalyticsPage";
+import PracticePage from "./pages/PracticePage";
+import BookmarksPage from "./pages/BookmarksPage";
 import ProfilePage from "./pages/ProfilePage";
 import InterviewSetup from "./pages/InterviewSetup";
 import InterviewSession from "./pages/InterviewSession";
@@ -22,12 +26,16 @@ import NotificationsPage from "./pages/NotificationsPage";
 import NotFound from "./pages/NotFound";
 
 const PAGE_TITLES = {
-  "/":                 "InterviewAI — Ace Your Interviews with AI",
+  "/":                 "InterviewIQ — Practice. Improve. Get Hired.",
   "/login":            "Sign In",
   "/register":         "Create Account",
   "/forgot-password":  "Forgot Password",
   "/reset-password":   "Reset Password",
   "/dashboard":        "Dashboard",
+  "/interviews":       "Interviews",
+  "/analytics":        "Analytics",
+  "/practice":         "Practice",
+  "/bookmarks":        "Bookmarks",
   "/resume":           "Resume",
   "/profile":          "Profile Settings",
   "/notifications":    "Notifications",
@@ -37,7 +45,7 @@ const PAGE_TITLES = {
 function TitleManager() {
   const { pathname } = useLocation();
   useEffect(() => {
-    const base  = "InterviewAI";
+    const base  = "InterviewIQ";
     const exact = PAGE_TITLES[pathname];
     if (exact) { document.title = pathname === "/" ? exact : `${exact} — ${base}`; return; }
     const prefix = Object.entries(PAGE_TITLES).find(([p]) => p !== "/" && pathname.startsWith(p));
@@ -62,6 +70,10 @@ export default function App() {
 
           {/* Protected — with sidebar (AppLayout inside each page) */}
           <Route path="/dashboard"     element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/interviews"    element={<ProtectedRoute><InterviewsPage /></ProtectedRoute>} />
+          <Route path="/analytics"     element={<ProtectedRoute><AnalyticsPage /></ProtectedRoute>} />
+          <Route path="/practice"      element={<ProtectedRoute><PracticePage /></ProtectedRoute>} />
+          <Route path="/bookmarks"     element={<ProtectedRoute><BookmarksPage /></ProtectedRoute>} />
           <Route path="/profile"       element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
           <Route path="/resume"        element={<ProtectedRoute><ResumePage /></ProtectedRoute>} />
           <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />

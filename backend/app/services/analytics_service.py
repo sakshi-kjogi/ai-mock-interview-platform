@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.models.answer import Answer
 from app.models.feedback import Feedback
-from app.models.interview_session import InterviewSession, SessionStatus
+from app.models.interview_session import InterviewSession, InterviewType, SessionStatus
 from app.models.question import Question
 from app.schemas.analytics import (
     CategoryStat,
@@ -14,14 +14,18 @@ from app.schemas.analytics import (
 )
 
 
-def get_dashboard_analytics(db: Session, user_id: uuid.UUID) -> DashboardAnalytics:
+def get_dashboard_analytics(
+    db: Session, user_id: uuid.UUID, interview_type: InterviewType | None = None
+) -> DashboardAnalytics:
+    session_filter = [InterviewSession.user_id == user_id]
+    if interview_type:
+        session_filter.append(InterviewSession.interview_type == interview_type)
+
     # ── Total and completed session counts ──────────────────────────────────
-    total = db.query(func.count(InterviewSession.id)).filter(
-        InterviewSession.user_id == user_id
-    ).scalar() or 0
+    total = db.query(func.count(InterviewSession.id)).filter(*session_filter).scalar() or 0
 
     completed = db.query(func.count(InterviewSession.id)).filter(
-        InterviewSession.user_id == user_id,
+        *session_filter,
         InterviewSession.status == SessionStatus.completed,
     ).scalar() or 0
 
@@ -33,7 +37,7 @@ def get_dashboard_analytics(db: Session, user_id: uuid.UUID) -> DashboardAnalyti
         .join(Answer, Feedback.answer_id == Answer.id)
         .join(Question, Answer.question_id == Question.id)
         .join(InterviewSession, Question.session_id == InterviewSession.id)
-        .filter(InterviewSession.user_id == user_id)
+        .filter(*session_filter)
         .scalar()
     )
 
@@ -42,7 +46,7 @@ def get_dashboard_analytics(db: Session, user_id: uuid.UUID) -> DashboardAnalyti
         db.query(func.avg(Answer.time_taken_seconds))
         .join(Question, Answer.question_id == Question.id)
         .join(InterviewSession, Question.session_id == InterviewSession.id)
-        .filter(InterviewSession.user_id == user_id)
+        .filter(*session_filter)
         .scalar()
     )
 
@@ -58,7 +62,7 @@ def get_dashboard_analytics(db: Session, user_id: uuid.UUID) -> DashboardAnalyti
         .join(Answer, Answer.question_id == Question.id)
         .join(Feedback, Feedback.answer_id == Answer.id)
         .filter(
-            InterviewSession.user_id == user_id,
+            *session_filter,
             InterviewSession.status == SessionStatus.completed,
         )
         .group_by(InterviewSession.id)
@@ -88,7 +92,7 @@ def get_dashboard_analytics(db: Session, user_id: uuid.UUID) -> DashboardAnalyti
         .join(Feedback, Feedback.answer_id == Answer.id)
         .join(InterviewSession, Question.session_id == InterviewSession.id)
         .filter(
-            InterviewSession.user_id == user_id,
+            *session_filter,
             Question.category.isnot(None),
         )
         .group_by(Question.category)

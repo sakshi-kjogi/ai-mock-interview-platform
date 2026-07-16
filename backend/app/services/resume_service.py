@@ -10,6 +10,7 @@ from app.models.interview_session import InterviewSession
 from app.models.question import Question
 from app.models.resume import Resume
 from app.models.resume_feedback import ResumeFeedback
+from app.services.question_service import get_user_previous_question_texts
 
 _TECH_SKILLS = [
     "Python", "JavaScript", "TypeScript", "Java", "C++", "C#", "Go", "Rust",
@@ -120,10 +121,13 @@ def create_resume_interview_questions(
     db.query(Question).filter(Question.session_id == session.id).delete()
     db.commit()
 
+    exclude_questions = get_user_previous_question_texts(db, session.user_id)
+
     raw = generate_resume_questions(
         resume_text=resume.parsed_text or "",
         role_title=session.role_title,
         interview_type=session.interview_type.value,
+        exclude_questions=exclude_questions,
     )
 
     questions = []

@@ -5,7 +5,7 @@ from slowapi.errors import RateLimitExceeded
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 
-from app.api.v1 import analytics, answers, auth, feedback, interviews, notifications, questions, resumes, violations
+from app.api.v1 import analytics, answers, auth, bookmarks, feedback, interviews, notifications, questions, resumes, violations
 from app.core.config import settings
 from app.core.rate_limit import limiter
 
@@ -24,7 +24,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
 
 app = FastAPI(
-    title="AI Mock Interview Platform",
+    title="InterviewIQ API",
     docs_url="/docs" if settings.ENVIRONMENT == "development" else None,
     redoc_url=None,
 )
@@ -55,6 +55,7 @@ app.include_router(analytics.router,     prefix="/api/v1")
 app.include_router(resumes.router,       prefix="/api/v1")
 app.include_router(violations.router,    prefix="/api/v1")
 app.include_router(notifications.router, prefix="/api/v1")
+app.include_router(bookmarks.router,      prefix="/api/v1")
 
 
 @app.get("/health")

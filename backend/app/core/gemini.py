@@ -70,9 +70,25 @@ def _clean_json(raw: str) -> str:
     return raw
 
 
-def _mock_questions(role_title: str, interview_type: str, num_questions: int) -> list[dict]:
+def _mock_questions(
+    role_title: str, interview_type: str, num_questions: int, exclude_questions: list[str] | None = None
+) -> list[dict]:
+    exclude_questions = set(exclude_questions or [])
     pool = _MOCK_QUESTION_POOL.get(interview_type, _MOCK_QUESTION_POOL["technical"])
-    selected = random.sample(pool, min(num_questions, len(pool)))
+
+    # Filter out any pool entry whose formatted text matches something the
+    # user has already been asked before.
+    fresh_pool = [
+        q for q in pool
+        if q["question_text"].format(role=role_title) not in exclude_questions
+    ]
+
+    # If exclusion wiped out too much of the pool (e.g. a long-time user who
+    # has cycled through most of it), fall back to the full pool rather than
+    # erroring out — a rare repeat is better than a broken interview.
+    usable_pool = fresh_pool if len(fresh_pool) >= num_questions else pool
+
+    selected = random.sample(usable_pool, min(num_questions, len(usable_pool)))
     return [
         {"question_text": q["question_text"].format(role=role_title), "category": q["category"]}
         for q in selected
@@ -83,11 +99,27 @@ def generate_interview_questions(
     role_title: str,
     interview_type: str,
     num_questions: int = 5,
+    exclude_questions: list[str] | None = None,
 ) -> list[dict]:
+    exclude_questions = exclude_questions or []
     category_hint = _CATEGORY_HINTS.get(interview_type, "general")
-    prompt = f"""You are an expert {category_hint}.
+
+    exclusion_clause = ""
+    if exclude_questions:
+        # Cap how many we list in the prompt so it doesn't balloon for
+        # long-time users — the most recent ones are the most likely to
+        # still be fresh in the user's memory, so those matter most.
+        recent_exclusions = exclude_questions[:30]
+        joined = "\n".join(f"- {q}" for q in recent_exclusions)
+        exclusion_clause = f"""
+Do NOT repeat or closely paraphrase any of these questions the candidate has already been asked:
+{joined}
+"""
+
+    prompt = f"""You are an expert technical interviewer.
 Generate exactly {num_questions} {interview_type} interview questions for the role: {role_title}.
 Use one of these categories for each question: {category_hint}.
+{exclusion_clause}
 Return ONLY a valid JSON object. No markdown, no code fences, no explanation:
 {{"questions": [{{"question_text": "...", "category": "..."}}]}}"""
 
@@ -100,7 +132,7 @@ Return ONLY a valid JSON object. No markdown, no code fences, no explanation:
         return questions
     except Exception as e:
         logger.warning(f"Gemini generate_interview_questions failed, falling back to mock: {e}")
-        return _mock_questions(role_title, interview_type, num_questions)
+        return _mock_questions(role_title, interview_type, num_questions, exclude_questions)
 
 
 def evaluate_answer(question_text: str, answer_text: str) -> dict:
@@ -164,10 +196,22 @@ def generate_resume_questions(
     role_title: str,
     interview_type: str,
     num_questions: int = 5,
+    exclude_questions: list[str] | None = None,
 ) -> list[dict]:
+    exclude_questions = exclude_questions or []
+    exclusion_clause = ""
+    if exclude_questions:
+        recent_exclusions = exclude_questions[:30]
+        joined = "\n".join(f"- {q}" for q in recent_exclusions)
+        exclusion_clause = f"""
+Do NOT repeat or closely paraphrase any of these questions the candidate has already been asked:
+{joined}
+"""
+
     prompt = f"""You are an expert interviewer. Generate {num_questions} {interview_type} interview questions
 for a {role_title} candidate based on their resume. Questions should reference their specific experience.
 Resume (first 2000 chars): {resume_text[:2000]}
+{exclusion_clause}
 Return ONLY valid JSON: {{"questions": [{{"question_text": "...", "category": "..."}}]}}"""
 
     try:
@@ -193,4 +237,7 @@ Return ONLY valid JSON: {{"questions": [{{"question_text": "...", "category": ".
             {"question_text": "Describe a situation from your resume where you had to collaborate across teams. What was your approach?", "category": "teamwork"},
             {"question_text": f"What achievement on your resume are you most proud of and how does it relate to being a {role_title}?", "category": "communication"},
         ]
-        return random.sample(pool, min(num_questions, len(pool)))
+        exclude_set = set(exclude_questions)
+        fresh_pool = [q for q in pool if q["question_text"] not in exclude_set]
+        usable_pool = fresh_pool if len(fresh_pool) >= num_questions else pool
+        return random.sample(usable_pool, min(num_questions, len(usable_pool)))
