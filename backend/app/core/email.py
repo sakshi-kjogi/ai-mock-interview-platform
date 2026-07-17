@@ -17,12 +17,12 @@ def send_password_reset_email(to_email: str, reset_link: str) -> None:
         resend.Emails.send({
             "from": settings.RESEND_FROM_EMAIL,
             "to": to_email,
-            "subject": "Reset your InterviewAI password",
+            "subject": "Reset your InterviewIQ password",
             "html": f"""
                 <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
                     <h2 style="color: #111827;">Reset your password</h2>
                     <p style="color: #374151; line-height: 1.6;">
-                        We received a request to reset your InterviewAI password.
+                        We received a request to reset your InterviewIQ password.
                         Click the button below to choose a new one. This link expires in 30 minutes.
                     </p>
                     <a href="{reset_link}"

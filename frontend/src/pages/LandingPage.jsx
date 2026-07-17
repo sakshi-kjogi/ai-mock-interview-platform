@@ -26,7 +26,7 @@ export default function LandingPage() {
       <nav style={{ borderBottom: "1px solid #1e293b", padding: `0 ${sidePad}px`, height: 64, display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, background: "#0f172a", zIndex: 50 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{ width: 32, height: 32, borderRadius: 8, background: "linear-gradient(135deg,#6366f1,#8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>🎯</div>
-          <span style={{ fontSize: 16, fontWeight: 700, letterSpacing: "-0.02em" }}>InterviewAI</span>
+          <span style={{ fontSize: 16, fontWeight: 700, letterSpacing: "-0.02em" }}>InterviewIQ</span>
         </div>
 
         {!isMobile && (
@@ -175,7 +175,7 @@ export default function LandingPage() {
       {/* CTA */}
       <section style={{ padding: isMobile ? "48px 20px" : "80px 64px", textAlign: "center", background: "linear-gradient(135deg,rgba(99,102,241,0.1),rgba(139,92,246,0.05))" }}>
         <h2 style={{ fontSize: isMobile ? 24 : 36, fontWeight: 800, margin: "0 0 12px", letterSpacing: "-0.02em" }}>Ready to land your dream job?</h2>
-        <p style={{ color: "#64748b", fontSize: isMobile ? 14 : 16, margin: "0 0 32px" }}>Join thousands of developers who improved their interview skills with InterviewAI.</p>
+        <p style={{ color: "#64748b", fontSize: isMobile ? 14 : 16, margin: "0 0 32px" }}>Join thousands of developers who improved their interview skills with InterviewIQ.</p>
         <button onClick={() => navigate("/register")}
           style={{ background: "linear-gradient(135deg,#6366f1,#4f46e5)", border: "none", color: "#fff", padding: "14px 36px", borderRadius: 10, fontSize: 16, fontWeight: 700, cursor: "pointer" }}>
           Get Started for Free →
@@ -183,7 +183,7 @@ export default function LandingPage() {
       </section>
 
       <footer style={{ borderTop: "1px solid #1e293b", padding: isMobile ? "20px" : "24px 64px", display: "flex", flexDirection: isMobile ? "column" : "row", justifyContent: "space-between", alignItems: "center", gap: isMobile ? 16 : 0 }}>
-        <span style={{ color: "#334155", fontSize: 13 }}>© 2026 InterviewAI. All rights reserved.</span>
+        <span style={{ color: "#334155", fontSize: 13 }}>© 2026 InterviewIQ. All rights reserved.</span>
         <div style={{ display: "flex", gap: 24 }}>
           {["Privacy", "Terms", "Contact"].map(l => (
             <a key={l} href="#" style={{ color: "#334155", fontSize: 13, textDecoration: "none" }}>{l}</a>

@@ -45,7 +45,7 @@ export default function Register() {
         <div style={{ width: 420, flexShrink: 0, background: "linear-gradient(160deg,#1e1b4b 0%,#0f172a 60%)", display: "flex", flexDirection: "column", justifyContent: "center", padding: "48px 40px", borderRight: "1px solid #1e293b" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 40 }}>
             <div style={{ width: 36, height: 36, borderRadius: 8, background: "linear-gradient(135deg,#6366f1,#8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>🎯</div>
-            <span style={{ fontSize: 18, fontWeight: 700, color: "#f8fafc" }}>InterviewAI</span>
+            <span style={{ fontSize: 18, fontWeight: 700, color: "#f8fafc" }}>InterviewIQ</span>
           </div>
           <h1 style={{ fontSize: 26, fontWeight: 700, color: "#f8fafc", lineHeight: 1.2, margin: "0 0 12px" }}>Start your journey<br/>towards success</h1>
           <p style={{ color: "#475569", fontSize: 14, lineHeight: 1.7, marginBottom: 32 }}>Create your account and unlock the power of AI mock interviews.</p>
@@ -64,7 +64,7 @@ export default function Register() {
       {isMobile && (
         <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "24px 20px 0" }}>
           <div style={{ width: 32, height: 32, borderRadius: 8, background: "linear-gradient(135deg,#6366f1,#8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>🎯</div>
-          <span style={{ fontSize: 16, fontWeight: 700, color: "#f8fafc" }}>InterviewAI</span>
+          <span style={{ fontSize: 16, fontWeight: 700, color: "#f8fafc" }}>InterviewIQ</span>
         </div>
       )}
 
